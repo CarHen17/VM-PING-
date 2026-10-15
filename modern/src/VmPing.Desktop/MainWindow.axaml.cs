@@ -34,7 +34,9 @@ public partial class MainWindow : Window
         alerts = new(SendTelegramAsync, TimeSpan.FromSeconds(5));
         alerts.Failed += ex => Dispatcher.UIThread.Post(() => Footer.Text = $"Falha ao enviar alerta: {ex.Message}");
         InitializeComponent(); DataContext = this;
-        SizeChanged += (_, _) => CardColumns = Math.Clamp((int)((Bounds.Width - 274) / 335), 1, 4);
+        // Sidebar 190 + page margins 40; cards are at least ~280 wide including their 10 px gap.
+        SizeChanged += (_, _) => CardColumns = Math.Clamp((int)((Bounds.Width - 230) / 290), 1, 8);
+        FitToScreen();
         Cards.CollectionChanged += (_, e) =>
         {
             if (e.OldItems is not null) foreach (Card card in e.OldItems) card.StatusChanged -= CardStatusChanged;
@@ -75,6 +77,14 @@ public partial class MainWindow : Window
         };
     }
     private void CardStatusChanged(Card card) => UpdateOverview();
+    // Never open larger than the working area (small notebooks, taskbar, display scaling).
+    private void FitToScreen()
+    {
+        if (Screens.Primary is not { } screen) return;
+        var area = screen.WorkingArea.Size.ToSize(screen.Scaling);
+        Width = Math.Min(Width, area.Width * 0.95); Height = Math.Min(Height, area.Height * 0.95);
+        MinWidth = Math.Min(MinWidth, Width); MinHeight = Math.Min(MinHeight, Height);
+    }
     private void UpdateProbeSettings()
     {
         probeSettings = new(Interval, Timeout);

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.MainWindow" Title="vmPing Modern · Preview" Width="1440" Height="940" MinWidth="1120" MinHeight="760" Background="{DynamicResource PageBackground}">
-  <Grid ColumnDefinitions="210,*">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.MainWindow" Title="vmPing Modern · Preview" Width="1360" Height="860" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterScreen" Background="{DynamicResource PageBackground}">
+  <Grid ColumnDefinitions="190,*">
     <Border Background="{DynamicResource SidebarBackground}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
-      <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16,28,16,20">
-        <Grid ColumnDefinitions="40,*" Margin="8,0,0,44">
-          <Border Width="36" Height="36" CornerRadius="10" Background="#7764EF">
-            <Path Width="23" Height="23" Stretch="Uniform" Stroke="White" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M1,12 L6,12 L9,4 L14,20 L17,12 L23,12"/>
+      <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12,18,12,12">
+        <Grid ColumnDefinitions="36,*" Margin="8,0,0,22">
+          <Border Width="32" Height="32" CornerRadius="9" Background="#7764EF">
+            <Path Width="20" Height="20" Stretch="Uniform" Stroke="White" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M1,12 L6,12 L9,4 L14,20 L17,12 L23,12"/>
           </Border>
           <StackPanel Grid.Column="1" Margin="11,0,0,0">
-            <TextBlock Text="vmPing" FontSize="22" FontWeight="Bold"/>
+            <TextBlock Text="vmPing" FontSize="19" FontWeight="Bold"/>
             <TextBlock Text="MODERN" FontSize="9" LetterSpacing="3" Foreground="{DynamicResource MutedText}"/>
           </StackPanel>
         </Grid>
         <StackPanel Grid.Row="1">
-          <TextBlock Classes="caption" Text="WORKSPACE" Margin="14,0,0,12"/>
+          <TextBlock Classes="caption" Text="WORKSPACE" Margin="12,0,0,6"/>
           <Button x:Name="NavMonitor" Classes="nav selected" Tag="Monitor" Click="NavigateClick">
             <StackPanel Orientation="Horizontal" Spacing="12">
               <Path Width="18" Height="18" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,3 L10,3 L10,10 L3,10 Z M14,3 L21,3 L21,10 L14,10 Z M3,14 L10,14 L10,21 L3,21 Z M14,14 L21,14 L21,21 L14,21 Z"/>
@@ -39,8 +39,8 @@
             </StackPanel>
           </Button>
         </StackPanel>
-        <StackPanel Grid.Row="3" Spacing="8">
-          <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Margin="6,0,6,10"/>
+        <StackPanel Grid.Row="3" Spacing="2">
+          <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Margin="6,0,6,6"/>
           <Button Classes="nav" Click="ImportClick">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M12,16 L12,3 M7,8 L12,3 L17,8 M4,15 L4,21 L20,21 L20,15"/>
@@ -53,19 +53,18 @@
               <TextBlock Text="Alternar aparência" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
-          <Grid ColumnDefinitions="Auto,*" Margin="14,14,0,0">
+          <Grid ColumnDefinitions="Auto,*" Margin="12,8,0,0">
             <Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource SuccessBrush}"/>
-            <TextBlock Grid.Column="1" Text="Desktop · preview 0.1" FontSize="11" Classes="muted" Margin="8,0,0,0"/>
+            <TextBlock Grid.Column="1" Text="vmPing Modern 0.3" FontSize="11" Classes="muted" Margin="8,0,0,0"/>
           </Grid>
         </StackPanel>
       </Grid>
     </Border>
-    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" Margin="32,28,32,0">
-      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,28">
-        <StackPanel Spacing="8">
-          <TextBlock Classes="caption" Text="DIAGNÓSTICO DE REDE"/>
-          <TextBlock x:Name="PageTitle" Text="Monitoramento" FontSize="28" FontWeight="SemiBold" LetterSpacing="-0.6"/>
-          <TextBlock x:Name="PageDescription" Classes="muted" Text="Disponibilidade e latência dos seus hosts, em tempo real."/>
+    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" Margin="20,14,20,0">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <TextBlock x:Name="PageTitle" Text="Monitoramento" FontSize="20" FontWeight="SemiBold" LetterSpacing="-0.4" VerticalAlignment="Center"/>
+          <TextBlock x:Name="PageDescription" Classes="muted" Text="Disponibilidade e latência dos seus hosts, em tempo real." VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
         </StackPanel>
         <Button Classes="" Click="ExportClick" Grid.Column="1" VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal" Spacing="8">
@@ -75,49 +74,40 @@
         </Button>
       </Grid>
       <Grid Grid.Row="1" x:Name="MonitorPage" RowDefinitions="Auto,Auto,Auto,*">
-        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="14" Margin="0,0,0,22">
+        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="10" Margin="0,0,0,10">
           <Border Classes="stat" Grid.Column="0">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="9">
-                <TextBlock Classes="caption" Text="TOTAL DE HOSTS"/>
-                <TextBlock x:Name="TotalCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
-              </StackPanel>
-              <Border Grid.Column="1" Background="#8D83FF" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <Border Background="#8D83FF" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Classes="caption" Text="TOTAL DE HOSTS" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Grid.Column="2" x:Name="TotalCount" Text="0" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </Grid>
           </Border>
           <Border Classes="stat" Grid.Column="1">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="9">
-                <TextBlock Classes="caption" Text="ONLINE"/>
-                <TextBlock x:Name="OnlineCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
-              </StackPanel>
-              <Border Grid.Column="1" Background="#39CFA1" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <Border Background="#39CFA1" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Classes="caption" Text="ONLINE" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Grid.Column="2" x:Name="OnlineCount" Text="0" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </Grid>
           </Border>
           <Border Classes="stat" Grid.Column="2">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="9">
-                <TextBlock Classes="caption" Text="SEM RESPOSTA"/>
-                <TextBlock x:Name="DownCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
-              </StackPanel>
-              <Border Grid.Column="1" Background="#F77C8C" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <Border Background="#F77C8C" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Classes="caption" Text="SEM RESPOSTA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Grid.Column="2" x:Name="DownCount" Text="0" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </Grid>
           </Border>
           <Border Classes="stat" Grid.Column="3">
-            <Grid ColumnDefinitions="*,Auto">
-              <StackPanel Spacing="9">
-                <TextBlock Classes="caption" Text="ERROS LOCAIS"/>
-                <TextBlock x:Name="ErrorCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
-              </StackPanel>
-              <Border Grid.Column="1" Background="#E8B365" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <Border Background="#E8B365" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Center"/>
+              <TextBlock Grid.Column="1" Classes="caption" Text="ERROS LOCAIS" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+              <TextBlock Grid.Column="2" x:Name="ErrorCount" Text="0" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </Grid>
           </Border>
         </Grid>
-        <Border Grid.Row="1" Classes="panel" Padding="20,17" Margin="0,0,0,26">
-          <StackPanel Spacing="12">
-            <TextBlock Classes="caption" Text="ADICIONAR HOSTS"/>
-            <Grid ColumnDefinitions="*,180,Auto" ColumnSpacing="10">
-              <TextBox x:Name="HostInput" Watermark="IP, nome DNS ou host:porta · opcional: espaço + nome" KeyDown="HostKeyDown"/>
+        <Border Grid.Row="1" Classes="panel" Padding="10" Margin="0,0,0,12">
+          <StackPanel>
+            <Grid ColumnDefinitions="*,170,Auto" ColumnSpacing="8">
+              <TextBox x:Name="HostInput" Watermark="Adicionar: IP, DNS ou host:porta · vários: 10.0.0.1 OLT-Centro, 10.0.0.2" KeyDown="HostKeyDown" ToolTip.Tip="Separe por vírgula ou ponto e vírgula; cada item aceita nome após espaço (ex.: 10.0.0.1 OLT-Centro). TCP com IPv6: [endereço]:porta."/>
               <TextBox Grid.Column="1" x:Name="AliasInput" Watermark="Nome (opcional)"/>
               <Button Classes="primary" Click="AddClick" Grid.Column="2">
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -126,10 +116,9 @@
                 </StackPanel>
               </Button>
             </Grid>
-            <TextBlock Classes="muted" FontSize="11" Text="Vários hosts? Separe por vírgula ou ponto e vírgula; cada item aceita nome após espaço (ex.: 10.0.0.1 OLT-Centro). TCP com IPv6: [endereço]:porta."/>
           </StackPanel>
         </Border>
-        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
           <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
             <TextBlock Classes="section" Text="Seus hosts"/>
             <TextBlock x:Name="HostCountLabel" Classes="muted" Text="0 configurados" VerticalAlignment="Center"/>
@@ -151,7 +140,7 @@
         </Grid>
         <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Disabled">
           <StackPanel>
-            <Border x:Name="MonitorEmpty" Classes="panel" Padding="36" Margin="0,0,0,16">
+            <Border x:Name="MonitorEmpty" Classes="panel" Padding="24" Margin="0,0,0,10">
               <StackPanel HorizontalAlignment="Center" Spacing="12">
                 <Border Background="{DynamicResource SelectedBackground}" Width="54" Height="54" CornerRadius="16" Margin="0,0,0,8">
                   <Path Width="28" Height="28" Stretch="Uniform" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M1,12 L6,12 L9,4 L14,20 L17,12 L23,12"/>
@@ -168,58 +157,54 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Classes="panel" Padding="20" Margin="0,0,14,14">
-                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                  <Border Classes="panel" Padding="14,12" Margin="0,0,10,10" BorderBrush="{Binding Accent}">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
                       <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                        <StackPanel Spacing="5">
-                          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Spacing="2">
+                          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="14" TextTrimming="CharacterEllipsis"/>
                           <TextBlock Text="{Binding Address}" Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                        <Border Grid.Column="1" Background="{Binding BadgeBackground}" CornerRadius="5" Padding="8,5" VerticalAlignment="Top">
+                        <Border Grid.Column="1" Background="{Binding BadgeBackground}" CornerRadius="5" Padding="7,4" VerticalAlignment="Top">
                           <StackPanel Orientation="Horizontal" Spacing="5">
                             <Border Background="{Binding Accent}" Width="5" Height="5" CornerRadius="3"/>
                             <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding Accent}" FontSize="10" FontWeight="SemiBold"/>
                           </StackPanel>
                         </Border>
                       </Grid>
-                      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,22,0,16">
-                        <StackPanel Spacing="3">
-                          <TextBlock Classes="caption" Text="LATÊNCIA"/>
-                          <TextBlock Text="{Binding Latency}" FontSize="30" FontWeight="SemiBold" LetterSpacing="-1"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Bottom">
-                          <TextBlock Classes="caption" Text="PERDA" HorizontalAlignment="Right"/>
-                          <TextBlock Text="{Binding Loss}" Foreground="{Binding Accent}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                      <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,6">
+                        <TextBlock Text="{Binding Latency}" FontSize="22" FontWeight="SemiBold" LetterSpacing="-0.6" VerticalAlignment="Bottom"/>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom" Margin="0,0,0,3">
+                          <TextBlock Classes="caption" Text="PERDA" VerticalAlignment="Center"/>
+                          <TextBlock Text="{Binding Loss}" Foreground="{Binding Accent}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                       </Grid>
-                      <local:LatencyChart Grid.Row="2" Samples="{Binding Samples}" Height="54" Margin="0,0,0,16"/>
-                      <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" Margin="0,0,0,14">
-                        <StackPanel Spacing="6">
-                          <TextBlock Classes="caption" Text="MÍNIMA"/>
-                          <TextBlock Text="{Binding Minimum}" FontWeight="Medium"/>
+                      <local:LatencyChart Grid.Row="2" Samples="{Binding Samples}" Height="34" Margin="0,0,0,8"/>
+                      <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" Margin="0,0,0,6">
+                        <StackPanel Spacing="2">
+                          <TextBlock Classes="caption" Text="MÍN"/>
+                          <TextBlock Text="{Binding Minimum}" FontSize="12" FontWeight="Medium"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Spacing="6">
-                          <TextBlock Classes="caption" Text="MÉDIA"/>
-                          <TextBlock Text="{Binding Average}" FontWeight="Medium"/>
+                        <StackPanel Grid.Column="1" Spacing="2">
+                          <TextBlock Classes="caption" Text="MÉD"/>
+                          <TextBlock Text="{Binding Average}" FontSize="12" FontWeight="Medium"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="2" Spacing="6">
-                          <TextBlock Classes="caption" Text="MÁXIMA"/>
-                          <TextBlock Text="{Binding Maximum}" FontWeight="Medium"/>
+                        <StackPanel Grid.Column="2" Spacing="2">
+                          <TextBlock Classes="caption" Text="MÁX"/>
+                          <TextBlock Text="{Binding Maximum}" FontSize="12" FontWeight="Medium"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="3" Spacing="6" ToolTip.Tip="Variação média entre respostas consecutivas">
+                        <StackPanel Grid.Column="3" Spacing="2" Background="Transparent" ToolTip.Tip="Variação média entre respostas consecutivas">
                           <TextBlock Classes="caption" Text="JITTER"/>
-                          <TextBlock Text="{Binding Jitter}" FontWeight="Medium"/>
+                          <TextBlock Text="{Binding Jitter}" FontSize="12" FontWeight="Medium"/>
                         </StackPanel>
                       </Grid>
-                      <TextBlock Grid.Row="4" Text="{Binding Detail}" Classes="muted" FontSize="10" TextTrimming="CharacterEllipsis" Margin="0,0,0,14"/>
-                      <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto">
-                        <TextBlock Text="{Binding PacketSummary}" Classes="muted" FontSize="10" VerticalAlignment="Center"/>
-                        <Button Classes="quiet" Click="ToggleCardClick" Grid.Column="1" Padding="10,6" MinHeight="30" Content="{Binding ActionLabel}"/>
-                        <Button Classes="quiet" Click="RemoveCardClick" Grid.Column="2" Padding="7" MinHeight="30" ToolTip.Tip="Remover host" AutomationProperties.Name="Remover host">
-                          <StackPanel Orientation="Horizontal" Spacing="8">
-                            <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M4,6 L20,6 M9,6 L9,3 L15,3 L15,6 M6,6 L7,21 L17,21 L18,6 M10,10 L10,17 M14,10 L14,17"/>
-                            <TextBlock Text="" VerticalAlignment="Center"/>
-                          </StackPanel>
+                      <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto">
+                        <StackPanel VerticalAlignment="Center" Spacing="1" Background="Transparent" ToolTip.Tip="{Binding Detail}">
+                          <TextBlock Text="{Binding Detail}" Classes="muted" FontSize="10" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock Text="{Binding PacketSummary}" Classes="muted" FontSize="10"/>
+                        </StackPanel>
+                        <Button Classes="quiet" Click="ToggleCardClick" Grid.Column="1" Padding="8,4" MinHeight="26" FontSize="12" Content="{Binding ActionLabel}"/>
+                        <Button Classes="quiet" Click="RemoveCardClick" Grid.Column="2" Padding="5" MinHeight="26" ToolTip.Tip="Remover host" AutomationProperties.Name="Remover host">
+                          <Path Width="14" Height="14" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M4,6 L20,6 M9,6 L9,3 L15,3 L15,6 M6,6 L7,21 L17,21 L18,6 M10,10 L10,17 M14,10 L14,17"/>
                         </Button>
                       </Grid>
                     </Grid>
@@ -231,9 +216,8 @@
         </ScrollViewer>
       </Grid>
       <Grid Grid.Row="1" x:Name="TracePage" IsVisible="False" RowDefinitions="Auto,Auto,*,Auto">
-        <Border Classes="panel" Padding="22" Margin="0,0,0,24">
-          <StackPanel Spacing="18">
-            <TextBlock Classes="caption" Text="DESTINO DA ANÁLISE"/>
+        <Border Classes="panel" Padding="12" Margin="0,0,0,12">
+          <StackPanel Spacing="10">
             <Grid ColumnDefinitions="*,100,165,Auto,Auto" ColumnSpacing="10">
               <TextBox x:Name="TraceHost" Watermark="IP ou nome DNS do destino"/>
               <ComboBox x:Name="FamilyPicker" Grid.Column="1" SelectedIndex="0">
@@ -264,13 +248,13 @@
             </Grid>
           </StackPanel>
         </Border>
-        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,8">
           <TextBlock Classes="section" Text="Caminho da conexão"/>
           <TextBlock Grid.Column="1" Classes="muted" Text="Latência em ms · perda por salto" FontSize="11" VerticalAlignment="Center"/>
         </Grid>
         <Border Grid.Row="2" Classes="panel" ClipToBounds="True">
           <Grid RowDefinitions="Auto,*,Auto">
-            <Border Background="{DynamicResource SoftBackground}" Padding="18,15">
+            <Border Background="{DynamicResource SoftBackground}" Padding="14,9">
               <Grid ColumnDefinitions="40,*,64,72,76,76,76,76">
                 <TextBlock Classes="caption" Text="#"/>
                 <TextBlock Grid.Column="1" Classes="caption" Text="IP / DNS REVERSO"/>
@@ -294,7 +278,7 @@
                 <ItemsControl ItemsSource="{Binding Hops}" VerticalAlignment="Top">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Border Classes="hopRow" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="18,16">
+                      <Border Classes="hopRow" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="14,7">
                         <Grid ColumnDefinitions="40,*,64,72,76,76,76,76">
                           <Border Width="25" Height="25" CornerRadius="6" Background="{DynamicResource SoftBackground}" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Ttl}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted" FontSize="11"/>
@@ -316,15 +300,15 @@
                 </ItemsControl>
               </Grid>
             </ScrollViewer>
-            <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="18,14">
+            <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="14,8">
               <TextBlock x:Name="TraceMessage" Classes="muted" FontSize="11" Text="Pronto para iniciar uma nova análise." TextWrapping="Wrap"/>
             </Border>
           </Grid>
         </Border>
-        <TextBlock Grid.Row="3" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="0,14,0,10" Text="Saltos intermediários podem limitar ICMP. Compare os resultados com a resposta do destino final."/>
+        <TextBlock Grid.Row="3" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="0,8,0,4" Text="Saltos intermediários podem limitar ICMP. Compare os resultados com a resposta do destino final."/>
       </Grid>
       <Grid Grid.Row="1" x:Name="HistoryPage" IsVisible="False" RowDefinitions="Auto,*">
-        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,8">
           <TextBlock Classes="section" Text="Linha do tempo"/>
           <TextBlock Grid.Column="1" Classes="muted" Text="Últimos 2.000 eventos · salvos em history.log" FontSize="11"/>
         </Grid>
@@ -337,7 +321,7 @@
             <ListBox ItemsSource="{Binding Events}" Background="Transparent" BorderThickness="0">
               <ListBox.ItemTemplate>
                 <DataTemplate>
-                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="12,10" FontSize="12"/>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="8,3" FontSize="12"/>
                 </DataTemplate>
               </ListBox.ItemTemplate>
             </ListBox>
@@ -345,8 +329,8 @@
         </Border>
       </Grid>
       <ScrollViewer Grid.Row="1" x:Name="SettingsPage" IsVisible="False">
-        <StackPanel Spacing="24" MaxWidth="840" HorizontalAlignment="Left">
-          <Border Classes="panel" Padding="26">
+        <StackPanel Spacing="12" MaxWidth="840" HorizontalAlignment="Left">
+          <Border Classes="panel" Padding="18">
             <StackPanel Spacing="20">
               <StackPanel Spacing="7">
                 <TextBlock Classes="section" Text="Sondagens"/>
@@ -378,7 +362,7 @@
               </Grid>
             </StackPanel>
           </Border>
-          <Border Classes="panel" Padding="26">
+          <Border Classes="panel" Padding="18">
             <StackPanel Spacing="22">
               <StackPanel Spacing="7">
                 <TextBlock Classes="section" Text="Favoritos"/>
@@ -403,7 +387,7 @@
               </StackPanel>
             </StackPanel>
           </Border>
-          <Border Classes="panel" Padding="26">
+          <Border Classes="panel" Padding="18">
             <StackPanel Spacing="20">
               <StackPanel Spacing="7">
                 <TextBlock Classes="section" Text="Alertas no Telegram"/>
@@ -428,7 +412,7 @@
           </Border>
         </StackPanel>
       </ScrollViewer>
-      <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Margin="0,16,0,0" Padding="0,14">
+      <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Margin="0,8,0,0" Padding="0,8">
         <Grid ColumnDefinitions="Auto,*">
           <Border Background="{DynamicResource AccentBrush}" Width="5" Height="5" CornerRadius="3" Margin="0,0,9,0"/>
           <TextBlock Grid.Column="1" x:Name="Footer" Classes="muted" FontSize="10" Text="Pronto. Adicione seus hosts para começar." TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
