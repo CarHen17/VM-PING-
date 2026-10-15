@@ -1,0 +1,58 @@
+name: vmPing Modern
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['modern/**', '.github/workflows/modern.yml']
+  pull_request:
+    paths: ['modern/**', '.github/workflows/modern.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Allow unprivileged ICMP
+        run: sudo sysctl -w net.ipv4.ping_group_range="0 2147483647"
+      - run: dotnet test modern/VmPing.Modern.slnx -c Release
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish
+        run: |
+          for target in win-x64 linux-x64; do
+            folder="$target"; [[ "$target" == "win-x64" ]] && folder="windows-x64"
+            dotnet publish modern/src/VmPing.Desktop -c Release -r "$target" --self-contained true -p:PublishTrimmed=false -o "dist/$folder"
+            mkdir -p "dist/$folder/notices"
+            cp modern/notices/* "dist/$folder/notices/"
+            cp LICENSE "dist/$folder/LICENSE.txt"
+            cp modern/README.md "dist/$folder/README.md"
+          done
+          (cd dist/windows-x64 && zip -qr ../vmPing-modern-windows-x64.zip .)
+          tar -C dist/linux-x64 -czf dist/vmPing-modern-linux-x64.tar.gz .
+          (cd dist && sha256sum vmPing-modern-*.zip vmPing-modern-*.tar.gz > SHA256SUMS.txt)
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/vmPing-modern-windows-x64.zip dist/vmPing-modern-linux-x64.tar.gz dist/SHA256SUMS.txt --title "vmPing Modern $GITHUB_REF_NAME" --generate-notes --prerelease
