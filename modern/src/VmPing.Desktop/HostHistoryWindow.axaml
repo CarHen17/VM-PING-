@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.HostHistoryWindow" Title="Histórico de latência" Width="980" Height="560" MinWidth="640" MinHeight="380" WindowStartupLocation="CenterOwner" Background="{DynamicResource PageBackground}">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.HostHistoryWindow" Title="Histórico de latência" Width="980" Height="560" MinWidth="640" MinHeight="380" WindowStartupLocation="CenterOwner" Icon="/Assets/vmping.ico" Background="{DynamicResource PageBackground}">
   <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="18,14">
     <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
       <StackPanel Spacing="2">

@@ -4,7 +4,14 @@
     <OutputType>WinExe</OutputType>
     <AssemblyName>vmPing-modern</AssemblyName>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets/vmping.ico</ApplicationIcon>
+    <Product>vmPing Modern</Product>
+    <Version>0.4.1</Version>
+    <Copyright>MIT · baseado no vmPing (c) 2020 Ryan Smith</Copyright>
   </PropertyGroup>
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/vmping.ico"/>
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../VmPing.Core/VmPing.Core.csproj"/>
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22"/>

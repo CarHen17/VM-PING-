@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.MainWindow" Title="vmPing Modern · Preview" Width="1360" Height="860" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterScreen" Background="{DynamicResource PageBackground}">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.MainWindow" Title="vmPing Modern · Preview" Width="1360" Height="860" MinWidth="900" MinHeight="560" WindowStartupLocation="CenterScreen" Icon="/Assets/vmping.ico" Background="{DynamicResource PageBackground}">
   <Grid ColumnDefinitions="190,*">
     <Border Background="{DynamicResource SidebarBackground}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
       <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12,18,12,12">
@@ -55,7 +55,7 @@
           </Button>
           <Grid ColumnDefinitions="Auto,*" Margin="12,8,0,0">
             <Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource SuccessBrush}"/>
-            <TextBlock Grid.Column="1" Text="vmPing Modern 0.4" FontSize="11" Classes="muted" Margin="8,0,0,0"/>
+            <TextBlock Grid.Column="1" Text="vmPing Modern 0.4.1" FontSize="11" Classes="muted" Margin="8,0,0,0"/>
           </Grid>
         </StackPanel>
       </Grid>

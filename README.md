@@ -22,12 +22,7 @@ O executável ainda não tem assinatura digital: o Windows SmartScreen pode avis
 
 ### Assinatura de código (mantenedor)
 
-O workflow assina os `.exe` automaticamente quando estes secrets existem no repositório (*Settings → Secrets and variables → Actions*):
-
-- `WINDOWS_CERT_PFX_BASE64` — certificado de assinatura de código `.pfx` em base64 (`base64 -w0 cert.pfx`)
-- `WINDOWS_CERT_PASSWORD` — senha do `.pfx`
-
-Sem os secrets, a release sai sem assinatura, como hoje.
+Desde 2023 certificados de assinatura de código têm a chave em token USB ou HSM na nuvem, não em arquivo `.pfx` exportável. O passo de assinatura do workflow com `WINDOWS_CERT_PFX_BASE64`/`WINDOWS_CERT_PASSWORD` só serve para certificados antigos ou de teste; a integração definitiva depende do serviço escolhido (SignPath, eSigner, KeyLocker etc.). Sem secrets, a release sai sem assinatura.
 
 ## Recursos
 
