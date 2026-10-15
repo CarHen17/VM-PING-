@@ -108,14 +108,79 @@ public sealed class CoreTests
         Assert.True(Stopwatch.GetElapsedTime(times[0], times[2]).TotalMilliseconds >= 240);
     }
     [Fact]
-    public void HopStatisticsResetOnRouteChangeAndPreserveDnsOnTimeout()
+    public void HopAggregatesEcmpPathsAndPreservesDnsOnTimeout()
     {
         var hop = new Hop(1);
         hop.Add(new(1, IPAddress.Parse("192.0.2.1"), "first.example", 10, IPStatus.TtlExpired));
         hop.Add(new(1, null, "", null, IPStatus.TimedOut));
         Assert.Equal("first.example", hop.DnsName); Assert.Equal("50.0%", hop.Loss);
         hop.Add(new(1, IPAddress.Parse("192.0.2.2"), "second.example", 20, IPStatus.TtlExpired));
-        Assert.Equal(1, hop.Sent); Assert.Equal("20.0", hop.Average);
+        Assert.Equal(3, hop.Sent); Assert.Equal("15.0", hop.Average); Assert.Equal(2, hop.PathCount);
+        Assert.Contains("ECMP: 2", hop.Subtitle);
+    }
+    [Fact]
+    public void StatusTrackerDebouncesFailuresAndRecovery()
+    {
+        var tracker = new StatusTracker(3, 2);
+        Assert.True(tracker.Add(ResultKind.Success)); Assert.Equal(HostStatus.Online, tracker.Status);
+        Assert.False(tracker.Add(ResultKind.Timeout)); Assert.False(tracker.Add(ResultKind.Timeout));
+        Assert.Equal(HostStatus.Online, tracker.Status);
+        Assert.True(tracker.Add(ResultKind.Timeout)); Assert.Equal(HostStatus.Down, tracker.Status);
+        Assert.False(tracker.Add(ResultKind.Success)); Assert.Equal(HostStatus.Down, tracker.Status);
+        Assert.True(tracker.Add(ResultKind.Success)); Assert.Equal(HostStatus.Online, tracker.Status);
+        tracker.Stop(); Assert.True(tracker.Add(ResultKind.LocalError)); Assert.Equal(HostStatus.LocalError, tracker.Status);
+    }
+    [Fact]
+    public void StatisticsComputeJitter()
+    {
+        var stats = new Statistics();
+        foreach (var ms in new double[] { 10, 14, 12 }) stats.Add(new(DateTimeOffset.Now, ResultKind.Success, ms, ""));
+        Assert.Equal(3, stats.Jitter, 3);
+    }
+    [Theory]
+    [InlineData(0, 0.23, 0.23)]
+    [InlineData(12, 12.7, 12.7)]
+    [InlineData(0, 4.5, 0)]
+    [InlineData(5, 3.0, 5)]
+    public void PreciseRoundtripOnlyRefinesWithinReportedMillisecond(long reported, double elapsed, double expected) =>
+        Assert.Equal(expected, NetworkProbe.PreciseRoundtrip(reported, elapsed), 3);
+    [Fact]
+    public async Task IcmpLoopbackHasSubMillisecondPrecisionOrReportedValue()
+    {
+        var result = await NetworkProbe.SendAsync(new("127.0.0.1"), 1000, default);
+        Assert.Equal(ResultKind.Success, result.Kind); Assert.InRange(result.Milliseconds!.Value, 0, 1000);
+    }
+    [Fact]
+    public async Task ProbeLoopReportsDnsFailureAndKeepsRunning()
+    {
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var results = new List<ProbeResult>();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => NetworkProbe.RunAsync(new("nao-existe.invalid"), 100, 500,
+            x => { results.Add(x); if (results.Count == 2) cancellation.Cancel(); }, cancellation.Token));
+        Assert.Equal(2, results.Count); Assert.All(results, x => Assert.Equal(ResultKind.LocalError, x.Kind));
+    }
+    [Fact]
+    public async Task AlertBatcherGroupsMessages()
+    {
+        var sent = new List<string>();
+        var batcher = new AlertBatcher(x => { sent.Add(x); return Task.CompletedTask; }, TimeSpan.FromMilliseconds(100));
+        batcher.Add("a"); batcher.Add("b");
+        await batcher.Flush();
+        Assert.Single(sent); Assert.Equal("a\nb", sent[0]);
+    }
+    [Fact]
+    public void HistoryStoreRotatesAndLoadsNewestFirst()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        try
+        {
+            var store = new HistoryStore(Path.Combine(directory, "history.log"), 50);
+            for (var i = 0; i < 10; i++) store.Append($"evento {i}");
+            Assert.True(File.Exists(store.Path + ".1"));
+            var recent = store.LoadRecent(2);
+            Assert.Equal(["evento 9", "evento 8"], recent);
+        }
+        finally { Directory.Delete(directory, true); }
     }
     [AvaloniaFact]
     public void WindowRendersAndNavigatesWithoutStartingProbes()
@@ -132,8 +197,15 @@ public sealed class CoreTests
         Assert.Null(card.Running);
         card.SetResult(new(DateTimeOffset.Now, ResultKind.Success, 5, "Local"));
         Assert.Equal("1", window.FindControl<TextBlock>("OnlineCount")!.Text);
+        card.SetResult(new(DateTimeOffset.Now, ResultKind.Timeout, null, "Local"));
+        Assert.Equal("1", window.FindControl<TextBlock>("OnlineCount")!.Text);
         card.Stopped();
         Assert.Equal("0", window.FindControl<TextBlock>("OnlineCount")!.Text);
+        window.FindControl<TextBox>("HostInput")!.Text = "127.0.0.2 OLT Centro, 127.0.0.3";
+        window.FindControl<TextBox>("AliasInput")!.Text = "Ignorado";
+        window.FindControl<TextBox>("HostInput")!.RaiseEvent(new Avalonia.Input.KeyEventArgs { RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent, Key = Avalonia.Input.Key.Enter });
+        Assert.Equal("OLT Centro", window.Cards.Single(x => x.Target.Host == "127.0.0.2").Title);
+        Assert.Equal("127.0.0.3", window.Cards.Single(x => x.Target.Host == "127.0.0.3").Title);
         window.Close();
         if (Directory.Exists(Path.GetDirectoryName(path))) Directory.Delete(Path.GetDirectoryName(path)!, true);
     }

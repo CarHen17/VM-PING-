@@ -15,6 +15,9 @@ public static class WorkspaceStore
             throw new InvalidDataException("Configuração inválida. O arquivo foi preservado.");
         foreach (var target in result.Targets.Concat(result.Favorites.SelectMany(x => x.Targets))) Target.Parse(target.Address);
         result.Aliases = new(result.Aliases, StringComparer.OrdinalIgnoreCase);
+        result.FailuresToDown = Math.Clamp(result.FailuresToDown, 1, 100);
+        result.SuccessesToUp = Math.Clamp(result.SuccessesToUp, 1, 100);
+        result.Alerts ??= new();
         return result;
     }
     public static void Save(string path, Workspace workspace)

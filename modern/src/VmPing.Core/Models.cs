@@ -48,8 +48,13 @@ public sealed class Statistics
     public long Errors { get; private set; }
     public double Min { get; private set; } = double.PositiveInfinity;
     public double Max { get; private set; }
-    private double total;
+    private double total, jitterTotal;
+    private long jitterSamples;
+    private double? previous;
     public double Average => Received == 0 ? 0 : total / Received;
+    // Mean absolute difference between consecutive successful replies.
+    public double Jitter => jitterSamples == 0 ? 0 : jitterTotal / jitterSamples;
+    public bool HasJitter => jitterSamples > 0;
     public double LossPercent => Sent - Errors == 0 ? 0 : 100d * Lost / (Sent - Errors);
     public void Add(ProbeResult result)
     {
@@ -59,7 +64,37 @@ public sealed class Statistics
         Received++;
         var time = result.Milliseconds ?? 0;
         Min = Math.Min(Min, time); Max = Math.Max(Max, time); total += time;
+        if (previous is double last) { jitterTotal += Math.Abs(time - last); jitterSamples++; }
+        previous = time;
     }
+}
+public enum HostStatus { Stopped, Online, Down, LocalError }
+// Debounces status changes so a single lost packet does not flap the host state.
+public sealed class StatusTracker(int failuresToDown = 3, int successesToUp = 1)
+{
+    public int FailuresToDown { get; set; } = Math.Max(1, failuresToDown);
+    public int SuccessesToUp { get; set; } = Math.Max(1, successesToUp);
+    public HostStatus Status { get; private set; } = HostStatus.Stopped;
+    public int ConsecutiveFailures { get; private set; }
+    public int ConsecutiveSuccesses { get; private set; }
+    // Returns true when Status changed.
+    public bool Add(ResultKind kind)
+    {
+        var previous = Status;
+        if (kind == ResultKind.Success)
+        {
+            ConsecutiveSuccesses++; ConsecutiveFailures = 0;
+            if (Status == HostStatus.Stopped || ConsecutiveSuccesses >= SuccessesToUp) Status = HostStatus.Online;
+        }
+        else
+        {
+            ConsecutiveFailures++; ConsecutiveSuccesses = 0;
+            var failed = kind == ResultKind.LocalError ? HostStatus.LocalError : HostStatus.Down;
+            if (Status == HostStatus.Stopped || ConsecutiveFailures >= FailuresToDown) Status = failed;
+        }
+        return Status != previous;
+    }
+    public void Stop() { Status = HostStatus.Stopped; ConsecutiveFailures = ConsecutiveSuccesses = 0; }
 }
 public record Favorite(string Name, List<Target> Targets);
 public sealed class Workspace
@@ -70,4 +105,13 @@ public sealed class Workspace
     public int IntervalMs { get; set; } = 1000;
     public int TimeoutMs { get; set; } = 1000;
     public bool DarkTheme { get; set; } = true;
+    public int FailuresToDown { get; set; } = 3;
+    public int SuccessesToUp { get; set; } = 1;
+    public AlertSettings Alerts { get; set; } = new();
+}
+public sealed class AlertSettings
+{
+    public bool TelegramEnabled { get; set; }
+    public string TelegramToken { get; set; } = "";
+    public string TelegramChatId { get; set; } = "";
 }

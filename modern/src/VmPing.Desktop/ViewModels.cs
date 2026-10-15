@@ -18,33 +18,46 @@ public sealed class Card(Target target) : Observable
     public string Title => string.IsNullOrWhiteSpace(Target.Alias) ? Target.Host : Target.Alias;
     public string Address => $"{Target.Kind.ToString().ToUpperInvariant()} · {Target.Address}";
     public Statistics Statistics { get; } = new();
-    public string Status { get; private set; } = "PARADO";
+    public StatusTracker Tracker { get; } = new();
+    public HostStatus Status => Tracker.Status;
+    public event Action<Card>? StatusChanged;
     public IBrush Accent => StatusColors.For(Status);
-    public string StatusLabel => Status switch { "ONLINE" => "Online", "SEM RESPOSTA" => "Sem resposta", "ERRO LOCAL" => "Erro local", _ => "Parado" };
+    public string StatusLabel => Label(Status);
+    public static string Label(HostStatus status) => status switch
+    {
+        HostStatus.Online => "Online", HostStatus.Down => "Sem resposta", HostStatus.LocalError => "Erro local", _ => "Parado"
+    };
     public IBrush BadgeBackground => new SolidColorBrush(((ISolidColorBrush)Accent).Color, 0.12);
     public string Loss => $"{Statistics.LossPercent:F1}%";
     public string Minimum => Statistics.Received == 0 ? "—" : $"{Statistics.Min:F1} ms";
     public string Average => Statistics.Received == 0 ? "—" : $"{Statistics.Average:F1} ms";
     public string Maximum => Statistics.Received == 0 ? "—" : $"{Statistics.Max:F1} ms";
+    public string Jitter => Statistics.HasJitter ? $"{Statistics.Jitter:F1} ms" : "—";
     public string PacketSummary => $"{Statistics.Sent} env. · {Statistics.Errors} erros";
     public string ActionLabel => Cancellation is null ? "Iniciar" : "Parar";
     public void RefreshPresentation() => Refresh();
     public string Latency { get; private set; } = "— ms";
     public string Detail { get; private set; } = "Aguardando início";
     public double?[] Samples { get; private set; } = [];
-    public string Summary => $"Enviados {Statistics.Sent} · perda {Statistics.LossPercent:F1}% · erros {Statistics.Errors}\nMín {(Statistics.Received > 0 ? Statistics.Min : 0):F1} · méd {Statistics.Average:F1} · máx {Statistics.Max:F1} ms";
     public CancellationTokenSource? Cancellation { get; set; }
     public Task? Running { get; set; }
-    public void SetResult(ProbeResult result)
+    // Returns true when the debounced status changed.
+    public bool SetResult(ProbeResult result)
     {
         Statistics.Add(result);
-        Status = result.Kind == ResultKind.Success ? "ONLINE" : result.Kind == ResultKind.LocalError ? "ERRO LOCAL" : "SEM RESPOSTA";
+        var changed = Tracker.Add(result.Kind);
         Latency = result.Milliseconds is double milliseconds ? $"{milliseconds:F1} ms" : "— ms";
-        Detail = $"{result.Time:HH:mm:ss} · {result.Detail}";
-        Samples = Samples.TakeLast(59).Append(result.Milliseconds).ToArray();
+        var streak = result.Kind != ResultKind.Success && Status == HostStatus.Online ? $" · falha {Tracker.ConsecutiveFailures}/{Tracker.FailuresToDown}" : "";
+        Detail = $"{result.Time:HH:mm:ss} · {result.Detail}{streak}";
+        var samples = new double?[Math.Min(Samples.Length + 1, 60)];
+        Array.Copy(Samples, Samples.Length - (samples.Length - 1), samples, 0, samples.Length - 1);
+        samples[^1] = result.Milliseconds;
+        Samples = samples;
         Refresh();
+        if (changed) StatusChanged?.Invoke(this);
+        return changed;
     }
-    public void Stopped() { Status = "PARADO"; Refresh(); }
+    public void Stopped() { Tracker.Stop(); Refresh(); StatusChanged?.Invoke(this); }
 }
 public sealed class Hop(int ttl) : Observable
 {
@@ -53,15 +66,20 @@ public sealed class Hop(int ttl) : Observable
     public string DnsName { get; private set; } = "";
     public long Sent { get; private set; }
     public string ResponseStatus { get; private set; } = "Aguardando";
-    public string Subtitle => !string.IsNullOrEmpty(DnsName) ? DnsName : ResponseStatus switch
+    // Every router seen at this TTL. Load-balanced (ECMP) paths answer from different addresses.
+    private readonly Dictionary<string, (string Name, long Count)> paths = [];
+    public int PathCount => paths.Count;
+    public string Paths => string.Join("\n", paths.OrderByDescending(x => x.Value.Count)
+        .Select(x => $"{x.Key}{(string.IsNullOrEmpty(x.Value.Name) ? "" : $" ({x.Value.Name})")} · {x.Value.Count} respostas"));
+    public string Subtitle => (!string.IsNullOrEmpty(DnsName) ? DnsName : ResponseStatus switch
     {
         "Success" => "Destino respondeu · sem registro PTR",
         "TtlExpired" or "TimeExceeded" => "Salto respondeu · sem registro PTR",
         "TimedOut" => "Sem resposta",
         "Aguardando" => "Aguardando resposta",
         _ => "Destino inacessível"
-    };
-    public IBrush LossBrush => StatusColors.For(Sent == received ? "ONLINE" : "SEM RESPOSTA");
+    }) + (paths.Count > 1 ? $" · ECMP: {paths.Count} roteadores" : "");
+    public IBrush LossBrush => StatusColors.For(Sent == received ? HostStatus.Online : HostStatus.Down);
     public void RefreshPresentation() => Refresh();
     private long received;
     private double total, minimum = double.PositiveInfinity, maximum;
@@ -72,15 +90,13 @@ public sealed class Hop(int ttl) : Observable
     public string Max => received == 0 ? "—" : $"{maximum:F1}";
     public void Add(HopResult result)
     {
-        if (result.Address is not null && Address != "*" && Address != result.Address.ToString())
-        {
-            Sent = received = 0; total = maximum = 0; minimum = double.PositiveInfinity;
-        }
         Sent++;
         ResponseStatus = result.Status.ToString();
         if (result.Address is not null)
         {
             Address = result.Address.ToString(); DnsName = result.DnsName;
+            var count = paths.TryGetValue(Address, out var known) ? known.Count : 0;
+            paths[Address] = (result.DnsName, count + 1);
         }
         Last = "—";
         if (result.Milliseconds is double time)
@@ -93,15 +109,8 @@ public sealed class Hop(int ttl) : Observable
 
 internal static class StatusColors
 {
-    public static IBrush For(string status)
-    {
-        var light = Application.Current?.ActualThemeVariant == ThemeVariant.Light;
-        return Brush.Parse(status switch
-        {
-            "ONLINE" => light ? "#087D60" : "#47D7AC",
-            "SEM RESPOSTA" => light ? "#BC294A" : "#FF8A97",
-            "ERRO LOCAL" => light ? "#99600B" : "#EDBD75",
-            _ => light ? "#64718A" : "#929DB2"
-        });
-    }
+    private static readonly IBrush[] Dark = [Brush.Parse("#929DB2"), Brush.Parse("#47D7AC"), Brush.Parse("#FF8A97"), Brush.Parse("#EDBD75")];
+    private static readonly IBrush[] Light = [Brush.Parse("#64718A"), Brush.Parse("#087D60"), Brush.Parse("#BC294A"), Brush.Parse("#99600B")];
+    public static IBrush For(HostStatus status) =>
+        (Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Light : Dark)[(int)status];
 }

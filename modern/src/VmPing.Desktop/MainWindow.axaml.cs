@@ -23,16 +23,22 @@ public partial class MainWindow : Window
     private CancellationTokenSource? traceCancellation;
     private Task? traceTask;
     private bool loaded, closing, allowClose;
+    private ProbeSettings probeSettings = new(1000, 1000);
+    private readonly HistoryStore history;
+    private readonly AlertBatcher alerts;
     public MainWindow() : this(WorkspaceStore.DefaultPath) { }
     public MainWindow(string path)
     {
         workspacePath = path;
+        history = new(Path.Combine(Path.GetDirectoryName(Path.GetFullPath(path))!, "history.log"));
+        alerts = new(SendTelegramAsync, TimeSpan.FromSeconds(5));
+        alerts.Failed += ex => Dispatcher.UIThread.Post(() => Footer.Text = $"Falha ao enviar alerta: {ex.Message}");
         InitializeComponent(); DataContext = this;
         SizeChanged += (_, _) => CardColumns = Math.Clamp((int)((Bounds.Width - 274) / 335), 1, 4);
         Cards.CollectionChanged += (_, e) =>
         {
-            if (e.OldItems is not null) foreach (Card card in e.OldItems) card.PropertyChanged -= CardPropertyChanged;
-            if (e.NewItems is not null) foreach (Card card in e.NewItems) card.PropertyChanged += CardPropertyChanged;
+            if (e.OldItems is not null) foreach (Card card in e.OldItems) card.StatusChanged -= CardStatusChanged;
+            if (e.NewItems is not null) foreach (Card card in e.NewItems) card.StatusChanged += CardStatusChanged;
             UpdateOverview();
         };
         Hops.CollectionChanged += (_, _) => TraceEmpty.IsVisible = Hops.Count == 0;
@@ -40,6 +46,16 @@ public partial class MainWindow : Window
         try { workspace = WorkspaceStore.Load(workspacePath); loaded = true; }
         catch (Exception ex) { Footer.Text = $"Não foi possível abrir a configuração: {ex.Message} Salvamento desativado para preservar o arquivo."; }
         IntervalInput.Value = workspace.IntervalMs; TimeoutInput.Value = workspace.TimeoutMs;
+        FailuresInput.Value = workspace.FailuresToDown; SuccessesInput.Value = workspace.SuccessesToUp;
+        TelegramEnabled.IsChecked = workspace.Alerts.TelegramEnabled;
+        TelegramToken.Text = workspace.Alerts.TelegramToken; TelegramChat.Text = workspace.Alerts.TelegramChatId;
+        UpdateProbeSettings();
+        foreach (var input in new[] { IntervalInput, TimeoutInput, FailuresInput, SuccessesInput })
+            input.ValueChanged += (_, _) => { UpdateProbeSettings(); Save(); };
+        TelegramEnabled.IsCheckedChanged += (_, _) => Save();
+        TelegramToken.LostFocus += (_, _) => Save(); TelegramChat.LostFocus += (_, _) => Save();
+        try { foreach (var item in history.LoadRecent(2000)) Events.Add(item); }
+        catch (Exception ex) { Footer.Text = $"Não foi possível ler o histórico: {ex.Message}"; }
         ApplyTheme();
         foreach (var target in workspace.Targets) Cards.Add(new(target));
         UpdateFavorites();
@@ -53,16 +69,28 @@ public partial class MainWindow : Window
             traceCancellation?.Cancel();
             foreach (var card in Cards) card.Cancellation?.Cancel();
             await Task.WhenAll(Cards.Select(x => x.Running ?? Task.CompletedTask).Append(traceTask ?? Task.CompletedTask));
-            Save(); allowClose = true; Close();
+            Save();
+            await Task.WhenAny(alerts.Flush(), Task.Delay(TimeSpan.FromSeconds(8)));
+            allowClose = true; Close();
         };
     }
-    private void CardPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => UpdateOverview();
+    private void CardStatusChanged(Card card) => UpdateOverview();
+    private void UpdateProbeSettings()
+    {
+        probeSettings = new(Interval, Timeout);
+        foreach (var card in Cards) ApplyThresholds(card);
+    }
+    private void ApplyThresholds(Card card)
+    {
+        card.Tracker.FailuresToDown = (int)(FailuresInput.Value ?? 3);
+        card.Tracker.SuccessesToUp = (int)(SuccessesInput.Value ?? 1);
+    }
     private void UpdateOverview()
     {
         TotalCount.Text = Cards.Count.ToString();
-        OnlineCount.Text = Cards.Count(x => x.Status == "ONLINE").ToString();
-        DownCount.Text = Cards.Count(x => x.Status == "SEM RESPOSTA").ToString();
-        ErrorCount.Text = Cards.Count(x => x.Status == "ERRO LOCAL").ToString();
+        OnlineCount.Text = Cards.Count(x => x.Status == HostStatus.Online).ToString();
+        DownCount.Text = Cards.Count(x => x.Status == HostStatus.Down).ToString();
+        ErrorCount.Text = Cards.Count(x => x.Status == HostStatus.LocalError).ToString();
         HostCountLabel.Text = $"{Cards.Count} configurados";
         MonitorEmpty.IsVisible = Cards.Count == 0;
     }
@@ -93,8 +121,15 @@ public partial class MainWindow : Window
     {
         try
         {
-            var targets = (HostInput.Text ?? "").Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => Target.Parse(x, AliasInput.Text?.Trim() ?? "")).ToList();
+            // Each entry is "host" or "host alias"; hosts never contain spaces, so the rest of the entry is the alias.
+            var entries = (HostInput.Text ?? "").Split([',', ';', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var typedAlias = AliasInput.Text?.Trim() ?? "";
+            var targets = entries.Select(x =>
+            {
+                var parts = x.Split((char[]?)null, 2, StringSplitOptions.RemoveEmptyEntries);
+                var alias = parts.Length > 1 ? parts[1].Trim() : entries.Length == 1 ? typedAlias : "";
+                return Target.Parse(parts[0], alias);
+            }).ToList();
             if (targets.Count == 0) throw new FormatException("Informe pelo menos um host.");
             foreach (var original in targets)
             {
@@ -109,22 +144,22 @@ public partial class MainWindow : Window
     {
         if (closing || card.Running is { IsCompleted: false }) return;
         var cancellation = new CancellationTokenSource(); card.Cancellation = cancellation;
-        var interval = Interval; var timeout = Timeout;
-        card.Running = RunCard(card, interval, timeout, cancellation);
+        ApplyThresholds(card);
+        card.Running = RunCard(card, cancellation);
         card.RefreshPresentation();
     }
-    private async Task RunCard(Card card, int interval, int timeout, CancellationTokenSource cancellation)
+    private async Task RunCard(Card card, CancellationTokenSource cancellation)
     {
         try
         {
-            await NetworkProbe.RunAsync(card.Target, interval, timeout, result =>
+            await NetworkProbe.RunAsync(card.Target, () => probeSettings, result =>
             {
-                var previous = card.Status; card.SetResult(result);
-                if (previous != card.Status)
-                {
-                    AddEvent($"{card.Title} ({card.Target.Address}): {card.Status} · {result.Detail}");
-                    Footer.Text = $"{result.Time:HH:mm:ss} · {card.Title}: {card.Status} · {result.Detail}";
-                }
+                var previous = card.Status;
+                if (!card.SetResult(result)) return;
+                AddEvent($"{card.Title} ({card.Target.Address}): {card.StatusLabel.ToUpperInvariant()} · {result.Detail}");
+                Footer.Text = $"{result.Time:HH:mm:ss} · {card.Title}: {card.StatusLabel} · {result.Detail}";
+                // The first result only establishes the initial state; alert on real transitions.
+                if (previous != HostStatus.Stopped) Alert(card, result);
             }, cancellation.Token);
         }
         catch (OperationCanceledException) { }
@@ -146,14 +181,35 @@ public partial class MainWindow : Window
     }
     private void AddEvent(string value)
     {
-        Events.Insert(0, $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} · {value}");
+        var line = $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz} · {value}";
+        Events.Insert(0, line);
         if (Events.Count > 2000) Events.RemoveAt(Events.Count - 1);
+        if (!loaded) return;
+        try { history.Append(line); }
+        catch (Exception ex) { Footer.Text = $"Não foi possível gravar o histórico: {ex.Message}"; }
+    }
+    private void Alert(Card card, ProbeResult result)
+    {
+        if (TelegramEnabled.IsChecked != true) return;
+        var icon = card.Status switch { HostStatus.Online => "🟢", HostStatus.Down => "🔴", _ => "🟠" };
+        alerts.Add($"{icon} {card.Title} ({card.Target.Address}) · {card.StatusLabel} · {result.Time:dd/MM HH:mm:ss}");
+    }
+    private Task SendTelegramAsync(string text) =>
+        TelegramClient.SendAsync(workspace.Alerts.TelegramToken, workspace.Alerts.TelegramChatId, $"vmPing · {Environment.MachineName}\n{text}");
+    private async void TestTelegramClick(object? sender, RoutedEventArgs e)
+    {
+        Save();
+        try { await TelegramClient.SendAsync(TelegramToken.Text ?? "", TelegramChat.Text ?? "", $"vmPing · {Environment.MachineName}\n✅ Teste de alerta"); Footer.Text = "Mensagem de teste enviada ao Telegram."; }
+        catch (Exception ex) { Footer.Text = $"Falha no teste do Telegram: {ex.Message}"; }
     }
     private void Save()
     {
         if (!loaded) return;
         workspace.Targets = Cards.Select(x => x.Target).ToList();
         workspace.IntervalMs = Interval; workspace.TimeoutMs = Timeout;
+        workspace.FailuresToDown = (int)(FailuresInput.Value ?? 3); workspace.SuccessesToUp = (int)(SuccessesInput.Value ?? 1);
+        workspace.Alerts.TelegramEnabled = TelegramEnabled.IsChecked == true;
+        workspace.Alerts.TelegramToken = TelegramToken.Text?.Trim() ?? ""; workspace.Alerts.TelegramChatId = TelegramChat.Text?.Trim() ?? "";
         try { WorkspaceStore.Save(workspacePath, workspace); }
         catch (Exception ex) { Footer.Text = $"Não foi possível salvar: {ex.Message}"; }
     }
@@ -171,6 +227,11 @@ public partial class MainWindow : Window
         if (string.IsNullOrEmpty(name) || Cards.Count == 0) { Footer.Text = "Informe o nome e adicione hosts antes de salvar."; return; }
         if (workspace.Favorites.Any(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) { Footer.Text = "Esse nome já existe. Use outro nome para preservar o favorito."; return; }
         workspace.Favorites.Add(new(name, Cards.Select(x => x.Target).ToList())); UpdateFavorites(); Save(); Footer.Text = "Favorito salvo.";
+    }
+    private void DeleteFavoriteClick(object? sender, RoutedEventArgs e)
+    {
+        if (FavoritePicker.SelectedItem is not Favorite favorite) { Footer.Text = "Selecione um favorito para excluir."; return; }
+        workspace.Favorites.Remove(favorite); UpdateFavorites(); Save(); Footer.Text = $"Favorito \"{favorite.Name}\" excluído.";
     }
     private async void LoadFavoriteClick(object? sender, RoutedEventArgs e)
     {
@@ -223,6 +284,9 @@ public partial class MainWindow : Window
                 {
                     while (Hops.Count < result.Ttl) Hops.Add(new(Hops.Count + 1));
                     Hops[result.Ttl - 1].Add(result);
+                    // The path got shorter: drop rows beyond the destination.
+                    if (result.Status == System.Net.NetworkInformation.IPStatus.Success)
+                        while (Hops.Count > result.Ttl) Hops.RemoveAt(Hops.Count - 1);
                 }), address => Dispatcher.UIThread.Post(() => TraceMessage.Text = $"{host} → {address} · {(continuous ? "MTR em execução" : "Traceroute em execução")} · tempos em ms"), token), token);
             TraceMessage.Text += " · Concluído";
         }
@@ -238,14 +302,14 @@ public partial class MainWindow : Window
         {
             var file = await StorageProvider.SaveFilePickerAsync(new() { Title = "Exportar resultados", SuggestedFileName = $"vmping-{DateTime.Now:yyyyMMdd-HHmmss}.csv", DefaultExtension = "csv" });
             if (file is null) return;
-            var text = new StringBuilder("tipo,host,alias,enviados,recebidos,perda_percentual,erros,min_ms,media_ms,max_ms\n");
+            var text = new StringBuilder("tipo,host,alias,status,enviados,recebidos,perda_percentual,erros,min_ms,media_ms,max_ms,jitter_ms\n");
             foreach (var card in Cards)
             {
                 var s = card.Statistics;
-                text.AppendLine(string.Join(",", new object?[] { card.Target.Kind, card.Target.Address, card.Target.Alias, s.Sent, s.Received, s.LossPercent, s.Errors, s.Received == 0 ? null : s.Min, s.Average, s.Max }.Select(Csv)));
+                text.AppendLine(string.Join(",", new object?[] { card.Target.Kind, card.Target.Address, card.Target.Alias, card.StatusLabel, s.Sent, s.Received, s.LossPercent, s.Errors, s.Received == 0 ? null : s.Min, s.Average, s.Max, s.HasJitter ? s.Jitter : null }.Select(Csv)));
             }
-            text.AppendLine("\nsalto,ip,dns,enviados,perda,ultimo_ms,media_ms,min_ms,max_ms");
-            foreach (var hop in Hops) text.AppendLine(string.Join(",", new object?[] { hop.Ttl, hop.Address, hop.DnsName, hop.Sent, hop.Loss, hop.Last, hop.Average, hop.Min, hop.Max }.Select(Csv)));
+            text.AppendLine("\nsalto,ip,dns,enviados,perda,ultimo_ms,media_ms,min_ms,max_ms,roteadores");
+            foreach (var hop in Hops) text.AppendLine(string.Join(",", new object?[] { hop.Ttl, hop.Address, hop.DnsName, hop.Sent, hop.Loss, hop.Last, hop.Average, hop.Min, hop.Max, hop.Paths.Replace("\n", " | ") }.Select(Csv)));
             text.AppendLine("\nevento"); foreach (var item in Events) text.AppendLine(Csv(item));
             await using var stream = await file.OpenWriteAsync(); stream.SetLength(0);
             await using var writer = new StreamWriter(stream, new UTF8Encoding(true)); await writer.WriteAsync(text.ToString()); Footer.Text = "CSV exportado.";

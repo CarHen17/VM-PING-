@@ -117,7 +117,7 @@
           <StackPanel Spacing="12">
             <TextBlock Classes="caption" Text="ADICIONAR HOSTS"/>
             <Grid ColumnDefinitions="*,180,Auto" ColumnSpacing="10">
-              <TextBox x:Name="HostInput" Watermark="IP, nome DNS ou host:porta" KeyDown="HostKeyDown"/>
+              <TextBox x:Name="HostInput" Watermark="IP, nome DNS ou host:porta · opcional: espaço + nome" KeyDown="HostKeyDown"/>
               <TextBox Grid.Column="1" x:Name="AliasInput" Watermark="Nome (opcional)"/>
               <Button Classes="primary" Click="AddClick" Grid.Column="2">
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -126,7 +126,7 @@
                 </StackPanel>
               </Button>
             </Grid>
-            <TextBlock Classes="muted" FontSize="11" Text="Vários hosts? Separe por vírgulas. Para TCP com IPv6, use [endereço]:porta."/>
+            <TextBlock Classes="muted" FontSize="11" Text="Vários hosts? Separe por vírgula ou ponto e vírgula; cada item aceita nome após espaço (ex.: 10.0.0.1 OLT-Centro). TCP com IPv6: [endereço]:porta."/>
           </StackPanel>
         </Border>
         <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
@@ -193,7 +193,7 @@
                         </StackPanel>
                       </Grid>
                       <local:LatencyChart Grid.Row="2" Samples="{Binding Samples}" Height="54" Margin="0,0,0,16"/>
-                      <Grid Grid.Row="3" ColumnDefinitions="*,*,*" Margin="0,0,0,14">
+                      <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" Margin="0,0,0,14">
                         <StackPanel Spacing="6">
                           <TextBlock Classes="caption" Text="MÍNIMA"/>
                           <TextBlock Text="{Binding Minimum}" FontWeight="Medium"/>
@@ -205,6 +205,10 @@
                         <StackPanel Grid.Column="2" Spacing="6">
                           <TextBlock Classes="caption" Text="MÁXIMA"/>
                           <TextBlock Text="{Binding Maximum}" FontWeight="Medium"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="3" Spacing="6" ToolTip.Tip="Variação média entre respostas consecutivas">
+                          <TextBlock Classes="caption" Text="JITTER"/>
+                          <TextBlock Text="{Binding Jitter}" FontWeight="Medium"/>
                         </StackPanel>
                       </Grid>
                       <TextBlock Grid.Row="4" Text="{Binding Detail}" Classes="muted" FontSize="10" TextTrimming="CharacterEllipsis" Margin="0,0,0,14"/>
@@ -295,7 +299,7 @@
                           <Border Width="25" Height="25" CornerRadius="6" Background="{DynamicResource SoftBackground}" HorizontalAlignment="Left" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Ttl}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted" FontSize="11"/>
                           </Border>
-                          <StackPanel Grid.Column="1" Spacing="5" Margin="0,0,12,0">
+                          <StackPanel Grid.Column="1" Spacing="5" Margin="0,0,12,0" Background="Transparent" ToolTip.Tip="{Binding Paths}">
                             <TextBlock Text="{Binding Address}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                             <TextBlock Text="{Binding Subtitle}" Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis"/>
                           </StackPanel>
@@ -322,7 +326,7 @@
       <Grid Grid.Row="1" x:Name="HistoryPage" IsVisible="False" RowDefinitions="Auto,*">
         <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,18">
           <TextBlock Classes="section" Text="Linha do tempo"/>
-          <TextBlock Grid.Column="1" Classes="muted" Text="Até 2.000 eventos nesta sessão" FontSize="11"/>
+          <TextBlock Grid.Column="1" Classes="muted" Text="Últimos 2.000 eventos · salvos em history.log" FontSize="11"/>
         </Grid>
         <Border Grid.Row="1" Classes="panel" Padding="8">
           <Grid>
@@ -346,7 +350,7 @@
             <StackPanel Spacing="20">
               <StackPanel Spacing="7">
                 <TextBlock Classes="section" Text="Sondagens"/>
-                <TextBlock Classes="muted" Text="Os valores são aplicados ao iniciar o monitoramento ou uma análise de rota." TextWrapping="Wrap"/>
+                <TextBlock Classes="muted" Text="Intervalo, tempo limite e limites de falha valem também para hosts em execução. O MTR usa os valores do momento em que inicia." TextWrapping="Wrap"/>
               </StackPanel>
               <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
                 <StackPanel Spacing="9">
@@ -358,6 +362,18 @@
                   <TextBlock Text="Tempo limite de resposta"/>
                   <NumericUpDown x:Name="TimeoutInput" Minimum="100" Maximum="60000" Increment="100" Value="1000" ShowButtonSpinner="False" FormatString="0"/>
                   <TextBlock Text="Milissegundos · limite de espera por sondagem" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Grid>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                <StackPanel Spacing="9">
+                  <TextBlock Text="Falhas seguidas para ficar offline"/>
+                  <NumericUpDown x:Name="FailuresInput" Minimum="1" Maximum="100" Increment="1" Value="3" ShowButtonSpinner="False" FormatString="0"/>
+                  <TextBlock Text="Evita alertas por perda isolada de pacote" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="9">
+                  <TextBlock Text="Respostas seguidas para voltar"/>
+                  <NumericUpDown x:Name="SuccessesInput" Minimum="1" Maximum="100" Increment="1" Value="1" ShowButtonSpinner="False" FormatString="0"/>
+                  <TextBlock Text="Confirma a recuperação antes de avisar" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
                 </StackPanel>
               </Grid>
             </StackPanel>
@@ -378,12 +394,36 @@
               <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0"/>
               <StackPanel Spacing="9">
                 <TextBlock Text="Abrir um conjunto salvo"/>
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                  <ComboBox x:Name="FavoritePicker" PlaceholderText="Selecione um favorito" DisplayMemberBinding="{Binding Name}"/>
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                  <ComboBox x:Name="FavoritePicker" PlaceholderText="Selecione um favorito" DisplayMemberBinding="{Binding Name}" HorizontalAlignment="Stretch"/>
                   <Button Classes="" Click="LoadFavoriteClick" Grid.Column="1">Carregar hosts</Button>
+                  <Button Classes="quiet" Click="DeleteFavoriteClick" Grid.Column="2">Excluir</Button>
                 </Grid>
                 <TextBlock Classes="muted" FontSize="11" Text="Carregar um favorito substitui os hosts da tela. As sondagens ficam paradas." TextWrapping="Wrap"/>
               </StackPanel>
+            </StackPanel>
+          </Border>
+          <Border Classes="panel" Padding="26">
+            <StackPanel Spacing="20">
+              <StackPanel Spacing="7">
+                <TextBlock Classes="section" Text="Alertas no Telegram"/>
+                <TextBlock Classes="muted" Text="Envia uma mensagem quando um host cai ou volta. Mudanças próximas são agrupadas em uma única mensagem a cada 5 segundos." TextWrapping="Wrap"/>
+              </StackPanel>
+              <ToggleSwitch x:Name="TelegramEnabled" OnContent="Alertas ativados" OffContent="Alertas desativados"/>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                <StackPanel Spacing="9">
+                  <TextBlock Text="Token do bot"/>
+                  <TextBox x:Name="TelegramToken" PasswordChar="•" Watermark="123456:ABC…"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="9">
+                  <TextBlock Text="Chat ID"/>
+                  <TextBox x:Name="TelegramChat" Watermark="-100…"/>
+                </StackPanel>
+              </Grid>
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <TextBlock Classes="muted" FontSize="11" Text="O token fica salvo sem criptografia no workspace.json do seu usuário." TextWrapping="Wrap" VerticalAlignment="Center"/>
+                <Button Grid.Column="1" Click="TestTelegramClick">Enviar teste</Button>
+              </Grid>
             </StackPanel>
           </Border>
         </StackPanel>
