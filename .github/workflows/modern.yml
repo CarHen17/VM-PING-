@@ -51,8 +51,18 @@ jobs:
           done
           (cd dist/windows-x64 && zip -qr ../vmPing-modern-windows-x64.zip .)
           tar -C dist/linux-x64 -czf dist/vmPing-modern-linux-x64.tar.gz .
-          (cd dist && sha256sum vmPing-modern-*.zip vmPing-modern-*.tar.gz > SHA256SUMS.txt)
+          # Single-file executables for direct download (native libraries extracted on first run).
+          for target in win-x64 linux-x64; do
+            dotnet publish modern/src/VmPing.Desktop -c Release -r "$target" --self-contained true -p:PublishSingleFile=true \
+              -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o "dist/single-$target"
+          done
+          cp dist/single-win-x64/vmPing-modern.exe dist/vmPing-modern.exe
+          cp dist/single-linux-x64/vmPing-modern dist/vmPing-modern-linux
+          (cd dist && sha256sum vmPing-modern.exe vmPing-modern-linux vmPing-modern-*.zip vmPing-modern-*.tar.gz > SHA256SUMS.txt)
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/vmPing-modern-windows-x64.zip dist/vmPing-modern-linux-x64.tar.gz dist/SHA256SUMS.txt --title "vmPing Modern $GITHUB_REF_NAME" --generate-notes --prerelease
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/vmPing-modern.exe dist/vmPing-modern-linux \
+            dist/vmPing-modern-windows-x64.zip dist/vmPing-modern-linux-x64.tar.gz dist/SHA256SUMS.txt \
+            --title "vmPing Modern $GITHUB_REF_NAME" --generate-notes --latest

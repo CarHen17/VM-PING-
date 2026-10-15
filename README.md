@@ -8,12 +8,17 @@ Reescrita em .NET 10 + Avalonia, inspirada no [vmPing de Ryan Smith](https://git
 
 ## Download
 
-Baixe a versão mais recente em **[Releases](https://github.com/CarHen17/VM-PING-/releases)**:
+### **[⬇ Baixar vmPing-modern.exe (Windows)](https://github.com/CarHen17/VM-PING-/releases/latest/download/vmPing-modern.exe)**
 
-- **Windows x64:** `vmPing-modern-windows-x64.zip` → extraia e abra `vmPing-modern.exe`
-- **Linux x64:** `vmPing-modern-linux-x64.tar.gz` → extraia e execute `./vmPing-modern`
+Arquivo único, sem instalador: baixe e execute. O runtime .NET já vem embutido.
 
-O runtime .NET já vem incluído; não precisa instalar nada.
+Outras opções em **[Releases](https://github.com/CarHen17/VM-PING-/releases/latest)**:
+
+- **Linux x64 (arquivo único):** [`vmPing-modern-linux`](https://github.com/CarHen17/VM-PING-/releases/latest/download/vmPing-modern-linux) → `chmod +x vmPing-modern-linux && ./vmPing-modern-linux`
+- **Windows x64 (pasta):** `vmPing-modern-windows-x64.zip` → extraia e abra `vmPing-modern.exe`
+- **Linux x64 (pasta):** `vmPing-modern-linux-x64.tar.gz` → extraia e execute `./vmPing-modern`
+
+O executável ainda não tem assinatura digital: o Windows SmartScreen pode avisar na primeira execução (**Mais informações → Executar assim mesmo**). Confira o hash em `SHA256SUMS.txt`.
 
 ## Recursos
 
