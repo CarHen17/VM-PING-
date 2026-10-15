@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>vmPing-modern</AssemblyName>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../VmPing.Core/VmPing.Core.csproj"/>
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22"/>
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22"/>
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.22"/>
+  </ItemGroup>
+</Project>

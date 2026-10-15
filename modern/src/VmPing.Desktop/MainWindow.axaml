@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="using:VmPing.Desktop" x:Class="VmPing.Desktop.MainWindow" Title="vmPing Modern · Preview" Width="1440" Height="940" MinWidth="1120" MinHeight="760" Background="{DynamicResource PageBackground}">
+  <Grid ColumnDefinitions="210,*">
+    <Border Background="{DynamicResource SidebarBackground}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,1,0">
+      <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="16,28,16,20">
+        <Grid ColumnDefinitions="40,*" Margin="8,0,0,44">
+          <Border Width="36" Height="36" CornerRadius="10" Background="#7764EF">
+            <Path Width="23" Height="23" Stretch="Uniform" Stroke="White" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M1,12 L6,12 L9,4 L14,20 L17,12 L23,12"/>
+          </Border>
+          <StackPanel Grid.Column="1" Margin="11,0,0,0">
+            <TextBlock Text="vmPing" FontSize="22" FontWeight="Bold"/>
+            <TextBlock Text="MODERN" FontSize="9" LetterSpacing="3" Foreground="{DynamicResource MutedText}"/>
+          </StackPanel>
+        </Grid>
+        <StackPanel Grid.Row="1">
+          <TextBlock Classes="caption" Text="WORKSPACE" Margin="14,0,0,12"/>
+          <Button x:Name="NavMonitor" Classes="nav selected" Tag="Monitor" Click="NavigateClick">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Path Width="18" Height="18" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,3 L10,3 L10,10 L3,10 Z M14,3 L21,3 L21,10 L14,10 Z M3,14 L10,14 L10,21 L3,21 Z M14,14 L21,14 L21,21 L14,21 Z"/>
+              <TextBlock Text="Monitoramento" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="NavTrace" Classes="nav " Tag="Trace" Click="NavigateClick">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Path Width="18" Height="18" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M5,3 A3,3 0 1 1 5,9 A3,3 0 1 1 5,3 M19,15 A3,3 0 1 1 19,21 A3,3 0 1 1 19,15 M8,6 L16,6 Q19,6 19,10 L19,15 M5,9 L5,14 Q5,18 10,18 L16,18"/>
+              <TextBlock Text="Rotas &amp; MTR" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="NavHistory" Classes="nav " Tag="History" Click="NavigateClick">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Path Width="18" Height="18" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M3,11 A9,9 0 1 1 5,18 M3,4 L3,11 L10,11 M12,7 L12,12 L16,14"/>
+              <TextBlock Text="Histórico" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="NavSettings" Classes="nav " Tag="Settings" Click="NavigateClick">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Path Width="18" Height="18" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M4,6 L20,6 M4,12 L20,12 M4,18 L20,18 M8,3 L8,9 M16,9 L16,15 M9,15 L9,21"/>
+              <TextBlock Text="Configurações" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Spacing="8">
+          <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Margin="6,0,6,10"/>
+          <Button Classes="nav" Click="ImportClick">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M12,16 L12,3 M7,8 L12,3 L17,8 M4,15 L4,21 L20,21 L20,15"/>
+              <TextBlock Text="Importar vmPing.xml" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="nav" Click="ThemeClick">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M12,7 A5,5 0 1 1 12,17 A5,5 0 1 1 12,7 M12,1 L12,4 M12,20 L12,23 M1,12 L4,12 M20,12 L23,12 M4,4 L6,6 M18,18 L20,20 M4,20 L6,18 M18,6 L20,4"/>
+              <TextBlock Text="Alternar aparência" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Grid ColumnDefinitions="Auto,*" Margin="14,14,0,0">
+            <Border Width="6" Height="6" CornerRadius="3" Background="{DynamicResource SuccessBrush}"/>
+            <TextBlock Grid.Column="1" Text="Desktop · preview 0.1" FontSize="11" Classes="muted" Margin="8,0,0,0"/>
+          </Grid>
+        </StackPanel>
+      </Grid>
+    </Border>
+    <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" Margin="32,28,32,0">
+      <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,28">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="caption" Text="DIAGNÓSTICO DE REDE"/>
+          <TextBlock x:Name="PageTitle" Text="Monitoramento" FontSize="28" FontWeight="SemiBold" LetterSpacing="-0.6"/>
+          <TextBlock x:Name="PageDescription" Classes="muted" Text="Disponibilidade e latência dos seus hosts, em tempo real."/>
+        </StackPanel>
+        <Button Classes="" Click="ExportClick" Grid.Column="1" VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M12,3 L12,16 M7,11 L12,16 L17,11 M4,16 L4,21 L20,21 L20,16"/>
+            <TextBlock Text="Exportar relatório" VerticalAlignment="Center"/>
+          </StackPanel>
+        </Button>
+      </Grid>
+      <Grid Grid.Row="1" x:Name="MonitorPage" RowDefinitions="Auto,Auto,Auto,*">
+        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="14" Margin="0,0,0,22">
+          <Border Classes="stat" Grid.Column="0">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="9">
+                <TextBlock Classes="caption" Text="TOTAL DE HOSTS"/>
+                <TextBlock x:Name="TotalCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
+              </StackPanel>
+              <Border Grid.Column="1" Background="#8D83FF" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            </Grid>
+          </Border>
+          <Border Classes="stat" Grid.Column="1">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="9">
+                <TextBlock Classes="caption" Text="ONLINE"/>
+                <TextBlock x:Name="OnlineCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
+              </StackPanel>
+              <Border Grid.Column="1" Background="#39CFA1" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            </Grid>
+          </Border>
+          <Border Classes="stat" Grid.Column="2">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="9">
+                <TextBlock Classes="caption" Text="SEM RESPOSTA"/>
+                <TextBlock x:Name="DownCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
+              </StackPanel>
+              <Border Grid.Column="1" Background="#F77C8C" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            </Grid>
+          </Border>
+          <Border Classes="stat" Grid.Column="3">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="9">
+                <TextBlock Classes="caption" Text="ERROS LOCAIS"/>
+                <TextBlock x:Name="ErrorCount" Text="0" FontSize="28" FontWeight="SemiBold"/>
+              </StackPanel>
+              <Border Grid.Column="1" Background="#E8B365" Width="8" Height="8" CornerRadius="4" VerticalAlignment="Top" Margin="0,3,0,0"/>
+            </Grid>
+          </Border>
+        </Grid>
+        <Border Grid.Row="1" Classes="panel" Padding="20,17" Margin="0,0,0,26">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="caption" Text="ADICIONAR HOSTS"/>
+            <Grid ColumnDefinitions="*,180,Auto" ColumnSpacing="10">
+              <TextBox x:Name="HostInput" Watermark="IP, nome DNS ou host:porta" KeyDown="HostKeyDown"/>
+              <TextBox Grid.Column="1" x:Name="AliasInput" Watermark="Nome (opcional)"/>
+              <Button Classes="primary" Click="AddClick" Grid.Column="2">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M12,4 L12,20 M4,12 L20,12"/>
+                  <TextBlock Text="Adicionar" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </Grid>
+            <TextBlock Classes="muted" FontSize="11" Text="Vários hosts? Separe por vírgulas. Para TCP com IPv6, use [endereço]:porta."/>
+          </StackPanel>
+        </Border>
+        <Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+          <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+            <TextBlock Classes="section" Text="Seus hosts"/>
+            <TextBlock x:Name="HostCountLabel" Classes="muted" Text="0 configurados" VerticalAlignment="Center"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+            <Button Classes="quiet" Click="StopAllClick">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M6,6 L18,6 L18,18 L6,18 Z"/>
+                <TextBlock Text="Parar todos" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+            <Button Classes="primary" Click="StartAllClick">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M8,4 L20,12 L8,20 Z"/>
+                <TextBlock Text="Iniciar todos" VerticalAlignment="Center"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </Grid>
+        <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel>
+            <Border x:Name="MonitorEmpty" Classes="panel" Padding="36" Margin="0,0,0,16">
+              <StackPanel HorizontalAlignment="Center" Spacing="12">
+                <Border Background="{DynamicResource SelectedBackground}" Width="54" Height="54" CornerRadius="16" Margin="0,0,0,8">
+                  <Path Width="28" Height="28" Stretch="Uniform" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M1,12 L6,12 L9,4 L14,20 L17,12 L23,12"/>
+                </Border>
+                <TextBlock Text="Adicione seu primeiro host" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock Classes="muted" Text="Seus diagnósticos aparecem aqui. Você decide quando iniciar." HorizontalAlignment="Center"/>
+              </StackPanel>
+            </Border>
+            <ItemsControl ItemsSource="{Binding Cards}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="{Binding CardColumns}"/>
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Classes="panel" Padding="20" Margin="0,0,14,14">
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <StackPanel Spacing="5">
+                          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock Text="{Binding Address}" Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="{Binding BadgeBackground}" CornerRadius="5" Padding="8,5" VerticalAlignment="Top">
+                          <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Border Background="{Binding Accent}" Width="5" Height="5" CornerRadius="3"/>
+                            <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding Accent}" FontSize="10" FontWeight="SemiBold"/>
+                          </StackPanel>
+                        </Border>
+                      </Grid>
+                      <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,22,0,16">
+                        <StackPanel Spacing="3">
+                          <TextBlock Classes="caption" Text="LATÊNCIA"/>
+                          <TextBlock Text="{Binding Latency}" FontSize="30" FontWeight="SemiBold" LetterSpacing="-1"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Bottom">
+                          <TextBlock Classes="caption" Text="PERDA" HorizontalAlignment="Right"/>
+                          <TextBlock Text="{Binding Loss}" Foreground="{Binding Accent}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                      </Grid>
+                      <local:LatencyChart Grid.Row="2" Samples="{Binding Samples}" Height="54" Margin="0,0,0,16"/>
+                      <Grid Grid.Row="3" ColumnDefinitions="*,*,*" Margin="0,0,0,14">
+                        <StackPanel Spacing="6">
+                          <TextBlock Classes="caption" Text="MÍNIMA"/>
+                          <TextBlock Text="{Binding Minimum}" FontWeight="Medium"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="6">
+                          <TextBlock Classes="caption" Text="MÉDIA"/>
+                          <TextBlock Text="{Binding Average}" FontWeight="Medium"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Spacing="6">
+                          <TextBlock Classes="caption" Text="MÁXIMA"/>
+                          <TextBlock Text="{Binding Maximum}" FontWeight="Medium"/>
+                        </StackPanel>
+                      </Grid>
+                      <TextBlock Grid.Row="4" Text="{Binding Detail}" Classes="muted" FontSize="10" TextTrimming="CharacterEllipsis" Margin="0,0,0,14"/>
+                      <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto">
+                        <TextBlock Text="{Binding PacketSummary}" Classes="muted" FontSize="10" VerticalAlignment="Center"/>
+                        <Button Classes="quiet" Click="ToggleCardClick" Grid.Column="1" Padding="10,6" MinHeight="30" Content="{Binding ActionLabel}"/>
+                        <Button Classes="quiet" Click="RemoveCardClick" Grid.Column="2" Padding="7" MinHeight="30" ToolTip.Tip="Remover host" AutomationProperties.Name="Remover host">
+                          <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M4,6 L20,6 M9,6 L9,3 L15,3 L15,6 M6,6 L7,21 L17,21 L18,6 M10,10 L10,17 M14,10 L14,17"/>
+                            <TextBlock Text="" VerticalAlignment="Center"/>
+                          </StackPanel>
+                        </Button>
+                      </Grid>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+      <Grid Grid.Row="1" x:Name="TracePage" IsVisible="False" RowDefinitions="Auto,Auto,*,Auto">
+        <Border Classes="panel" Padding="22" Margin="0,0,0,24">
+          <StackPanel Spacing="18">
+            <TextBlock Classes="caption" Text="DESTINO DA ANÁLISE"/>
+            <Grid ColumnDefinitions="*,100,165,Auto,Auto" ColumnSpacing="10">
+              <TextBox x:Name="TraceHost" Watermark="IP ou nome DNS do destino"/>
+              <ComboBox x:Name="FamilyPicker" Grid.Column="1" SelectedIndex="0">
+                <ComboBoxItem Content="IPv4"/>
+                <ComboBoxItem Content="IPv6"/>
+              </ComboBox>
+              <ToggleSwitch x:Name="MtrInput" Grid.Column="2" OnContent="MTR contínuo" OffContent="Traceroute" IsChecked="True" VerticalAlignment="Center"/>
+              <Button Classes="primary" Click="TraceClick" x:Name="TraceStart" Grid.Column="3">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M8,4 L20,12 L8,20 Z"/>
+                  <TextBlock Text="Iniciar" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+              <Button Classes="" Click="TraceStopClick" x:Name="TraceStop" Grid.Column="4" IsEnabled="False">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Path Width="15" Height="15" Stretch="Uniform" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M6,6 L18,6 L18,18 L6,18 Z"/>
+                  <TextBlock Text="Parar" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Button>
+            </Grid>
+            <Grid ColumnDefinitions="Auto,80,*,Auto" ColumnSpacing="12">
+              <TextBlock Text="Máximo de saltos" Classes="muted" VerticalAlignment="Center"/>
+              <NumericUpDown x:Name="MaxHops" Grid.Column="1" Minimum="1" Maximum="64" Value="30" ShowButtonSpinner="False" FormatString="0"/>
+              <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="7" VerticalAlignment="Center">
+                <Border Background="{DynamicResource SuccessBrush}" Width="5" Height="5" CornerRadius="3"/>
+                <TextBlock Text="DNS reverso automático" Classes="muted" FontSize="11"/>
+              </StackPanel>
+            </Grid>
+          </StackPanel>
+        </Border>
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+          <TextBlock Classes="section" Text="Caminho da conexão"/>
+          <TextBlock Grid.Column="1" Classes="muted" Text="Latência em ms · perda por salto" FontSize="11" VerticalAlignment="Center"/>
+        </Grid>
+        <Border Grid.Row="2" Classes="panel" ClipToBounds="True">
+          <Grid RowDefinitions="Auto,*,Auto">
+            <Border Background="{DynamicResource SoftBackground}" Padding="18,15">
+              <Grid ColumnDefinitions="40,*,64,72,76,76,76,76">
+                <TextBlock Classes="caption" Text="#"/>
+                <TextBlock Grid.Column="1" Classes="caption" Text="IP / DNS REVERSO"/>
+                <TextBlock Grid.Column="2" Classes="caption" Text="ENVIADOS" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Column="3" Classes="caption" Text="PERDA" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Column="4" Classes="caption" Text="ÚLTIMA" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Column="5" Classes="caption" Text="MÉDIA" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Column="6" Classes="caption" Text="MÍNIMA" HorizontalAlignment="Right"/>
+                <TextBlock Grid.Column="7" Classes="caption" Text="MÁXIMA" HorizontalAlignment="Right"/>
+              </Grid>
+            </Border>
+            <ScrollViewer Grid.Row="1">
+              <Grid>
+                <StackPanel x:Name="TraceEmpty" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" Margin="24">
+                  <Border Background="{DynamicResource SelectedBackground}" Width="52" Height="52" CornerRadius="16" HorizontalAlignment="Center">
+                    <Path Width="25" Height="25" Stretch="Uniform" Stroke="{DynamicResource AccentBrush}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" Data="M5,3 A3,3 0 1 1 5,9 A3,3 0 1 1 5,3 M19,15 A3,3 0 1 1 19,21 A3,3 0 1 1 19,15 M8,6 L16,6 Q19,6 19,10 L19,15 M5,9 L5,14 Q5,18 10,18 L16,18"/>
+                  </Border>
+                  <TextBlock Text="Descubra o caminho até o destino" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                  <TextBlock Classes="muted" Text="Escolha IPv4 ou IPv6 e inicie a análise." HorizontalAlignment="Center"/>
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Hops}" VerticalAlignment="Top">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Classes="hopRow" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,0,0,1" Padding="18,16">
+                        <Grid ColumnDefinitions="40,*,64,72,76,76,76,76">
+                          <Border Width="25" Height="25" CornerRadius="6" Background="{DynamicResource SoftBackground}" HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Ttl}" HorizontalAlignment="Center" VerticalAlignment="Center" Classes="muted" FontSize="11"/>
+                          </Border>
+                          <StackPanel Grid.Column="1" Spacing="5" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Address}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Text="{Binding Subtitle}" Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Sent}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                          <TextBlock Grid.Column="3" Text="{Binding Loss}" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{Binding LossBrush}"/>
+                          <TextBlock Grid.Column="4" Text="{Binding Last}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                          <TextBlock Grid.Column="5" Text="{Binding Average}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                          <TextBlock Grid.Column="6" Text="{Binding Min}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                          <TextBlock Grid.Column="7" Text="{Binding Max}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </Grid>
+            </ScrollViewer>
+            <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Padding="18,14">
+              <TextBlock x:Name="TraceMessage" Classes="muted" FontSize="11" Text="Pronto para iniciar uma nova análise." TextWrapping="Wrap"/>
+            </Border>
+          </Grid>
+        </Border>
+        <TextBlock Grid.Row="3" Classes="muted" FontSize="11" TextWrapping="Wrap" Margin="0,14,0,10" Text="Saltos intermediários podem limitar ICMP. Compare os resultados com a resposta do destino final."/>
+      </Grid>
+      <Grid Grid.Row="1" x:Name="HistoryPage" IsVisible="False" RowDefinitions="Auto,*">
+        <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+          <TextBlock Classes="section" Text="Linha do tempo"/>
+          <TextBlock Grid.Column="1" Classes="muted" Text="Até 2.000 eventos nesta sessão" FontSize="11"/>
+        </Grid>
+        <Border Grid.Row="1" Classes="panel" Padding="8">
+          <Grid>
+            <StackPanel x:Name="HistoryEmpty" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+              <TextBlock Text="Nenhum evento por enquanto" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+              <TextBlock Classes="muted" Text="Mudanças no estado dos hosts aparecerão aqui." HorizontalAlignment="Center"/>
+            </StackPanel>
+            <ListBox ItemsSource="{Binding Events}" Background="Transparent" BorderThickness="0">
+              <ListBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="12,10" FontSize="12"/>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </Grid>
+        </Border>
+      </Grid>
+      <ScrollViewer Grid.Row="1" x:Name="SettingsPage" IsVisible="False">
+        <StackPanel Spacing="24" MaxWidth="840" HorizontalAlignment="Left">
+          <Border Classes="panel" Padding="26">
+            <StackPanel Spacing="20">
+              <StackPanel Spacing="7">
+                <TextBlock Classes="section" Text="Sondagens"/>
+                <TextBlock Classes="muted" Text="Os valores são aplicados ao iniciar o monitoramento ou uma análise de rota." TextWrapping="Wrap"/>
+              </StackPanel>
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                <StackPanel Spacing="9">
+                  <TextBlock Text="Intervalo entre sondagens"/>
+                  <NumericUpDown x:Name="IntervalInput" Minimum="100" Maximum="60000" Increment="100" Value="1000" ShowButtonSpinner="False" FormatString="0"/>
+                  <TextBlock Text="Milissegundos · mínimo entre inícios de ciclos no MTR" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="9">
+                  <TextBlock Text="Tempo limite de resposta"/>
+                  <NumericUpDown x:Name="TimeoutInput" Minimum="100" Maximum="60000" Increment="100" Value="1000" ShowButtonSpinner="False" FormatString="0"/>
+                  <TextBlock Text="Milissegundos · limite de espera por sondagem" Classes="muted" FontSize="11" TextWrapping="Wrap"/>
+                </StackPanel>
+              </Grid>
+            </StackPanel>
+          </Border>
+          <Border Classes="panel" Padding="26">
+            <StackPanel Spacing="22">
+              <StackPanel Spacing="7">
+                <TextBlock Classes="section" Text="Favoritos"/>
+                <TextBlock Classes="muted" Text="Guarde conjuntos de hosts para os seus próximos diagnósticos." TextWrapping="Wrap"/>
+              </StackPanel>
+              <StackPanel Spacing="9">
+                <TextBlock Text="Salvar os hosts atuais"/>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <TextBox x:Name="FavoriteName" Watermark="Nome do conjunto"/>
+                  <Button Classes="primary" Click="SaveFavoriteClick" Grid.Column="1">Salvar favorito</Button>
+                </Grid>
+              </StackPanel>
+              <Border BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0"/>
+              <StackPanel Spacing="9">
+                <TextBlock Text="Abrir um conjunto salvo"/>
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                  <ComboBox x:Name="FavoritePicker" PlaceholderText="Selecione um favorito" DisplayMemberBinding="{Binding Name}"/>
+                  <Button Classes="" Click="LoadFavoriteClick" Grid.Column="1">Carregar hosts</Button>
+                </Grid>
+                <TextBlock Classes="muted" FontSize="11" Text="Carregar um favorito substitui os hosts da tela. As sondagens ficam paradas." TextWrapping="Wrap"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+      <Border Grid.Row="2" BorderBrush="{DynamicResource LineBrush}" BorderThickness="0,1,0,0" Margin="0,16,0,0" Padding="0,14">
+        <Grid ColumnDefinitions="Auto,*">
+          <Border Background="{DynamicResource AccentBrush}" Width="5" Height="5" CornerRadius="3" Margin="0,0,9,0"/>
+          <TextBlock Grid.Column="1" x:Name="Footer" Classes="muted" FontSize="10" Text="Pronto. Adicione seus hosts para começar." TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
+</Window>

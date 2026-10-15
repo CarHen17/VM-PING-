@@ -243,3 +243,6 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+# vmPing Modern generated packages and Avalonia build cache
+/dist/
+**/.avalonia-build-tasks/

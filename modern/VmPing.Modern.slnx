@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/VmPing.Core/VmPing.Core.csproj"/>
+    <Project Path="src/VmPing.Desktop/VmPing.Desktop.csproj"/>
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VmPing.Tests/VmPing.Tests.csproj"/>
+  </Folder>
+</Solution>
