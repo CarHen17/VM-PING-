@@ -34,6 +34,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      # Optional code signing: base64 of a .pfx code-signing certificate and its password (repository secrets).
+      SIGN_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+      SIGN_PFX_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
@@ -49,13 +53,28 @@ jobs:
             cp LICENSE "dist/$folder/LICENSE.txt"
             cp modern/README.md "dist/$folder/README.md"
           done
-          (cd dist/windows-x64 && zip -qr ../vmPing-modern-windows-x64.zip .)
-          tar -C dist/linux-x64 -czf dist/vmPing-modern-linux-x64.tar.gz .
           # Single-file executables for direct download (native libraries extracted on first run).
           for target in win-x64 linux-x64; do
             dotnet publish modern/src/VmPing.Desktop -c Release -r "$target" --self-contained true -p:PublishSingleFile=true \
               -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=none -o "dist/single-$target"
           done
+      - name: Sign Windows executables
+        if: env.SIGN_PFX_BASE64 != ''
+        run: |
+          sudo apt-get install -y -qq osslsigncode
+          echo "$SIGN_PFX_BASE64" | base64 -d > "$RUNNER_TEMP/cert.pfx"
+          for exe in dist/windows-x64/vmPing-modern.exe dist/single-win-x64/vmPing-modern.exe; do
+            osslsigncode sign -pkcs12 "$RUNNER_TEMP/cert.pfx" -pass "$SIGN_PFX_PASSWORD" -h sha256 \
+              -n "vmPing Modern" -i "https://github.com/${{ github.repository }}" -t http://timestamp.digicert.com \
+              -in "$exe" -out "$exe.signed"
+            mv "$exe.signed" "$exe"
+            osslsigncode verify -in "$exe" | grep -E "Signature verification|Signer"
+          done
+          rm -f "$RUNNER_TEMP/cert.pfx"
+      - name: Package
+        run: |
+          (cd dist/windows-x64 && zip -qr ../vmPing-modern-windows-x64.zip .)
+          tar -C dist/linux-x64 -czf dist/vmPing-modern-linux-x64.tar.gz .
           cp dist/single-win-x64/vmPing-modern.exe dist/vmPing-modern.exe
           cp dist/single-linux-x64/vmPing-modern dist/vmPing-modern-linux
           (cd dist && sha256sum vmPing-modern.exe vmPing-modern-linux vmPing-modern-*.zip vmPing-modern-*.tar.gz > SHA256SUMS.txt)

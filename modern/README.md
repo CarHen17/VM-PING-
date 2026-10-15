@@ -1,4 +1,4 @@
-# vmPing Modern — preview 0.1
+# vmPing Modern — 0.4
 
 Aplicativo desktop em português para Windows e Linux. Evolução independente do fluxo do [vmPing de Ryan Smith](https://github.com/r-smith/vmPing), com uma interface Avalonia com navegação lateral e um novo núcleo de rede sem dependências de WPF. O código original permanece em `../vmPing` e não foi alterado. Esta preview ainda não substitui todos os recursos da versão original.
 
@@ -18,6 +18,11 @@ Apenas adicionar ou carregar hosts não inicia tráfego. Clique em **Iniciar tod
 - Intervalo, tempo limite e limites de falha alterados em Configurações valem imediatamente para hosts em execução.
 - Alertas no Telegram nas mudanças de estado, agrupados em janelas de 5 segundos (útil quando um POP inteiro cai).
 - Inclusão em lote com nome por item: `10.0.0.1 OLT-Centro, 10.0.0.2 OLT-Norte`.
+- **Grupos** (ex.: POP Centro, OLTs, Borda): campo Grupo ao adicionar, clique direito no host → *Mover para grupo*. Cada grupo mostra um resumo ("12/14 online · 1 degradado"), pode ser recolhido e iniciado/parado de uma vez.
+- **Modo lista** (botão *Lista*/*Cards*): uma linha por host com estado, latência, perda, jitter, mín/méd/máx e mini-gráfico — dezenas de hosts na tela.
+- **Busca e filtros**: busca por nome, IP ou grupo; filtro *Com problema / Online / Parados*; ordenação por inclusão, problemas primeiro, nome ou maior latência.
+- **Degradação**: em Configurações, defina latência média (ms) e/ou perda (%) sobre as últimas 20 sondagens. O host passa a *Degradado* (laranja), entra no contador e gera alerta no Telegram com o motivo.
+- **Histórico de latência**: cada sondagem é gravada em disco (padrão 7 dias, configurável). O botão de gráfico do host abre a janela com 1 h / 6 h / 24 h / 7 dias: média, faixa mín–máx, perda e disponibilidade do período; passe o mouse para ver cada intervalo.
 - IPv4, IPv6 e nomes DNS. Para TCP com IPv6, use `[::1]:443`; sem porta, `::1` usa ICMP.
 - Painéis de status responsivos, resumo dos hosts, min/média/máx, perda, erros locais e gráfico em linha das últimas 60 sondagens.
 - Temas claro e escuro, aliases na inclusão de hosts e favoritos de conjuntos de hosts na tela Configurações.
@@ -41,11 +46,19 @@ O intervalo do MTR representa o mínimo entre inícios de ciclos completos. Cada
 
 Perda em salto intermediário pode resultar de limitação de ICMP, mesmo quando o destino funciona. Não representa necessariamente perda de tráfego encaminhado. Saltos sem resposta exibem `*` inicialmente. Após uma resposta, o último endereço conhecido permanece com o status da sondagem atual. Com balanceamento ECMP, cada salto acumula todos os roteadores que responderam naquele TTL: o subtítulo indica "ECMP: N roteadores" e a dica do mouse lista cada IP com sua contagem de respostas. Os contadores do salto somam todos os caminhos, como no `mtr`.
 
-Os TTLs são testados um de cada vez. No Linux, sondas `System.Net.Ping` simultâneas recebem as respostas `TTL exceeded` umas das outras e atribuem roteadores ao salto errado, por isso não há envio paralelo.
+Os saltos são testados em paralelo, então um ciclo leva cerca de um timeout, não um timeout por salto mudo:
+
+- **Windows:** usa a API ICMP do sistema, que associa cada resposta à sua requisição (como o WinMTR).
+- **Linux com root ou `CAP_NET_RAW`:** usa um socket ICMP próprio que confere identificador e sequência inclusive dentro das mensagens `TTL exceeded`. Para habilitar sem rodar como root: `sudo setcap cap_net_raw+ep ./vmPing-modern`.
+- **Linux sem permissão:** saltos em sequência. Sondas `System.Net.Ping` simultâneas no Linux recebem as respostas umas das outras e atribuem roteadores ao salto errado.
+
+As sondas paralelas são espaçadas em 20 ms para não esbarrar em limites de ICMP de roteadores e CGNAT. O salto do destino é o menor TTL em que ele já respondeu; perdas em TTLs menores não o deslocam. A mensagem no rodapé do MTR informa o modo em uso.
 
 A família de rede é explícita no traceroute/MTR. A indisponibilidade de uma família gera mensagem de erro. Não há troca silenciosa de IPv6 para IPv4. Uma máquina sem conectividade IPv6 externa só poderá testar destinos IPv6 acessíveis localmente.
 
 ## Dados e compatibilidade
+
+Amostras do histórico de latência: pasta `samples/` ao lado do `workspace.json`, um CSV por host por dia (`unix_ms,valor`; `-1` = perda, `-2` = erro local). Arquivos além da retenção são apagados ao abrir o app.
 
 Configuração nova: `%LOCALAPPDATA%/vmPing-modern/workspace.json` no Windows e no diretório de dados locais do usuário no Linux (normalmente `~/.local/share/vmPing-modern/workspace.json`). Hosts, favoritos, intervalos e tema são salvos; sondagens não reiniciam automaticamente ao abrir.
 
@@ -76,6 +89,6 @@ dotnet publish src/VmPing.Desktop -c Release -r linux-x64 --self-contained true 
 
 Os testes incluem sondagens reais de loopback IPv4/IPv6 e TCP; exigem suporte ICMP local. A interface também é testada por Avalonia Headless. Testes não precisam de internet. No Linux, a disponibilidade de ICMP depende das permissões e da configuração de rede do sistema; falhas aparecem como erros locais.
 
-Validação nesta entrega: build Release sem avisos; 28 testes; GUI Linux em Xvfb; traceroute IPv4 externo com respostas intermediárias e PTR. Windows foi compilado, mas ainda precisa ser executado em uma máquina Windows. IPv6 foi testado em loopback, sem prova de rota IPv6 externa.
+Validação nesta entrega: build Release sem avisos; 33 testes; MTR paralelo comparado ao `mtr` do sistema em rota real IPv4 (atrás de CGNAT) e IPv6; GUI Linux em Xvfb; traceroute IPv4 externo com respostas intermediárias e PTR. Windows foi compilado, mas ainda precisa ser executado em uma máquina Windows. IPv6 foi testado em loopback, sem prova de rota IPv6 externa.
 
 Licença MIT. Consulte `../LICENSE`. Projeto original: Copyright (c) 2020 Ryan Smith.

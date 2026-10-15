@@ -14,18 +14,25 @@ public abstract class Observable : INotifyPropertyChanged
 }
 public sealed class Card(Target target) : Observable
 {
-    public Target Target { get; } = target;
+    public Target Target { get; private set; } = target;
+    public string Group => Target.Group;
+    public void SetGroup(string group) { Target = Target with { Group = group.Trim() }; Refresh(); }
+    public DegradationMonitor Degradation { get; } = new();
+    public string DegradedReason => Degradation.Reason;
     public string Title => string.IsNullOrWhiteSpace(Target.Alias) ? Target.Host : Target.Alias;
     public string Address => $"{Target.Kind.ToString().ToUpperInvariant()} · {Target.Address}";
     public Statistics Statistics { get; } = new();
     public StatusTracker Tracker { get; } = new();
-    public HostStatus Status => Tracker.Status;
+    // Degradation only applies while the host is up; down and local-error states take precedence.
+    public HostStatus Status => Tracker.Status == HostStatus.Online && Degradation.IsDegraded ? HostStatus.Degraded : Tracker.Status;
+    public bool IsProblem => Status is HostStatus.Down or HostStatus.LocalError or HostStatus.Degraded;
     public event Action<Card>? StatusChanged;
     public IBrush Accent => StatusColors.For(Status);
     public string StatusLabel => Label(Status);
     public static string Label(HostStatus status) => status switch
     {
-        HostStatus.Online => "Online", HostStatus.Down => "Sem resposta", HostStatus.LocalError => "Erro local", _ => "Parado"
+        HostStatus.Online => "Online", HostStatus.Down => "Sem resposta", HostStatus.LocalError => "Erro local",
+        HostStatus.Degraded => "Degradado", _ => "Parado"
     };
     public IBrush BadgeBackground => new SolidColorBrush(((ISolidColorBrush)Accent).Color, 0.12);
     public string Loss => $"{Statistics.LossPercent:F1}%";
@@ -33,10 +40,12 @@ public sealed class Card(Target target) : Observable
     public string Average => Statistics.Received == 0 ? "—" : $"{Statistics.Average:F1} ms";
     public string Maximum => Statistics.Received == 0 ? "—" : $"{Statistics.Max:F1} ms";
     public string Jitter => Statistics.HasJitter ? $"{Statistics.Jitter:F1} ms" : "—";
+    public string MinAvgMax => Statistics.Received == 0 ? "— / — / —" : $"{Statistics.Min:F1} / {Statistics.Average:F1} / {Statistics.Max:F1}";
     public string PacketSummary => $"{Statistics.Sent} env. · {Statistics.Errors} erros";
     public string ActionLabel => Cancellation is null ? "Iniciar" : "Parar";
     public void RefreshPresentation() => Refresh();
     public string Latency { get; private set; } = "— ms";
+    public double? LastMilliseconds { get; private set; }
     public string Detail { get; private set; } = "Aguardando início";
     public double?[] Samples { get; private set; } = [];
     public CancellationTokenSource? Cancellation { get; set; }
@@ -44,10 +53,15 @@ public sealed class Card(Target target) : Observable
     // Returns true when the debounced status changed.
     public bool SetResult(ProbeResult result)
     {
+        var previous = Status;
         Statistics.Add(result);
-        var changed = Tracker.Add(result.Kind);
+        Tracker.Add(result.Kind);
+        Degradation.Add(result.Kind, result.Milliseconds);
+        var changed = Status != previous;
+        LastMilliseconds = result.Milliseconds;
         Latency = result.Milliseconds is double milliseconds ? $"{milliseconds:F1} ms" : "— ms";
-        var streak = result.Kind != ResultKind.Success && Status == HostStatus.Online ? $" · falha {Tracker.ConsecutiveFailures}/{Tracker.FailuresToDown}" : "";
+        var streak = result.Kind != ResultKind.Success && Tracker.Status == HostStatus.Online ? $" · falha {Tracker.ConsecutiveFailures}/{Tracker.FailuresToDown}" : "";
+        if (Status == HostStatus.Degraded) streak += $" · {Degradation.Reason}";
         Detail = $"{result.Time:HH:mm:ss} · {result.Detail}{streak}";
         var samples = new double?[Math.Min(Samples.Length + 1, 60)];
         Array.Copy(Samples, Samples.Length - (samples.Length - 1), samples, 0, samples.Length - 1);
@@ -57,7 +71,7 @@ public sealed class Card(Target target) : Observable
         if (changed) StatusChanged?.Invoke(this);
         return changed;
     }
-    public void Stopped() { Tracker.Stop(); Refresh(); StatusChanged?.Invoke(this); }
+    public void Stopped() { Tracker.Stop(); Degradation.Reset(); LastMilliseconds = null; Refresh(); StatusChanged?.Invoke(this); }
 }
 public sealed class Hop(int ttl) : Observable
 {
@@ -107,10 +121,42 @@ public sealed class Hop(int ttl) : Observable
     }
 }
 
+public sealed class CardGroup(string name) : Observable
+{
+    public string Name { get; } = name;
+    public string Title => Name.Length == 0 ? "Sem grupo" : Name;
+    public System.Collections.ObjectModel.ObservableCollection<Card> Cards { get; } = [];
+    public IReadOnlyList<Card> All { get; set; } = [];
+    private bool expanded = true;
+    public bool IsExpanded { get => expanded; set { expanded = value; Refresh(); } }
+    public bool ShowHeader { get; set; } = true;
+    public string Chevron => expanded ? "▾" : "▸";
+    public string Summary
+    {
+        get
+        {
+            var running = All.Count(x => x.Status != HostStatus.Stopped);
+            var parts = new List<string> { $"{All.Count(x => x.Status is HostStatus.Online or HostStatus.Degraded)}/{All.Count} online" };
+            var down = All.Count(x => x.Status == HostStatus.Down); if (down > 0) parts.Add($"{down} sem resposta");
+            var degraded = All.Count(x => x.Status == HostStatus.Degraded); if (degraded > 0) parts.Add($"{degraded} degradado{(degraded > 1 ? "s" : "")}");
+            var errors = All.Count(x => x.Status == HostStatus.LocalError); if (errors > 0) parts.Add($"{errors} erro{(errors > 1 ? "s" : "")} local");
+            if (running == 0) parts[0] = $"{All.Count} parado{(All.Count > 1 ? "s" : "")}";
+            if (Cards.Count != All.Count) parts.Add($"{Cards.Count} no filtro");
+            return string.Join(" · ", parts);
+        }
+    }
+    public IBrush Accent => StatusColors.For(All.Any(x => x.Status == HostStatus.Down) ? HostStatus.Down
+        : All.Any(x => x.Status == HostStatus.Degraded) ? HostStatus.Degraded
+        : All.Any(x => x.Status == HostStatus.LocalError) ? HostStatus.LocalError
+        : All.Any(x => x.Status == HostStatus.Online) ? HostStatus.Online : HostStatus.Stopped);
+    public void RefreshPresentation() => Refresh();
+}
+
 internal static class StatusColors
 {
-    private static readonly IBrush[] Dark = [Brush.Parse("#929DB2"), Brush.Parse("#47D7AC"), Brush.Parse("#FF8A97"), Brush.Parse("#EDBD75")];
-    private static readonly IBrush[] Light = [Brush.Parse("#64718A"), Brush.Parse("#087D60"), Brush.Parse("#BC294A"), Brush.Parse("#99600B")];
+    // Indexed by HostStatus: Stopped, Online, Down, LocalError, Degraded.
+    private static readonly IBrush[] Dark = [Brush.Parse("#929DB2"), Brush.Parse("#47D7AC"), Brush.Parse("#FF8A97"), Brush.Parse("#EDBD75"), Brush.Parse("#FF9F5A")];
+    private static readonly IBrush[] Light = [Brush.Parse("#64718A"), Brush.Parse("#087D60"), Brush.Parse("#BC294A"), Brush.Parse("#99600B"), Brush.Parse("#B4540A")];
     public static IBrush For(HostStatus status) =>
         (Application.Current?.ActualThemeVariant == ThemeVariant.Light ? Light : Dark)[(int)status];
 }

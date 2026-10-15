@@ -78,6 +78,10 @@
       <Setter Property="BorderBrush" Value="Transparent"/>
       <Setter Property="Foreground" Value="{DynamicResource MutedText}"/>
     </Style>
+    <Style Selector="Button.active">
+      <Setter Property="Background" Value="{DynamicResource SelectedBackground}"/>
+      <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+    </Style>
     <Style Selector="Button.nav">
       <Setter Property="HorizontalAlignment" Value="Stretch"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>

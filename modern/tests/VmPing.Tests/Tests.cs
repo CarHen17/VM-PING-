@@ -182,6 +182,71 @@ public sealed class CoreTests
         }
         finally { Directory.Delete(directory, true); }
     }
+    [Fact]
+    public void DegradationFlagsSlowAndLossyHosts()
+    {
+        var monitor = new DegradationMonitor { LatencyMs = 50, LossPercent = 10, Window = 10, MinimumSamples = 5 };
+        for (var i = 0; i < 4; i++) Assert.False(monitor.Add(ResultKind.Success, 80));
+        Assert.True(monitor.Add(ResultKind.Success, 80)); Assert.Contains("latência", monitor.Reason);
+        for (var i = 0; i < 10; i++) monitor.Add(ResultKind.Success, 10);
+        Assert.False(monitor.IsDegraded);
+        monitor.Add(ResultKind.Timeout, null); monitor.Add(ResultKind.Timeout, null);
+        Assert.True(monitor.IsDegraded); Assert.Contains("perda", monitor.Reason);
+        monitor.Add(ResultKind.LocalError, null);
+        Assert.Equal(20, monitor.RecentLoss, 3);
+    }
+    [Fact]
+    public void CardReportsDegradedOnlyWhileOnline()
+    {
+        var card = new Card(new("192.0.2.10"));
+        card.Degradation.LatencyMs = 50; card.Degradation.MinimumSamples = 2;
+        card.SetResult(new(DateTimeOffset.Now, ResultKind.Success, 100, ""));
+        Assert.Equal(HostStatus.Online, card.Status);
+        Assert.True(card.SetResult(new(DateTimeOffset.Now, ResultKind.Success, 100, "")));
+        Assert.Equal(HostStatus.Degraded, card.Status); Assert.True(card.IsProblem);
+        for (var i = 0; i < 3; i++) card.SetResult(new(DateTimeOffset.Now, ResultKind.Timeout, null, ""));
+        Assert.Equal(HostStatus.Down, card.Status);
+    }
+    [Fact]
+    public void SampleStoreAggregatesBuckets()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        try
+        {
+            var store = new SampleStore(directory);
+            var target = new Target("192.0.2.1", 443);
+            var start = new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero);
+            store.Add(target, new(start, ResultKind.Success, 10, ""));
+            store.Add(target, new(start.AddSeconds(1), ResultKind.Success, 30, ""));
+            store.Add(target, new(start.AddSeconds(2), ResultKind.Timeout, null, ""));
+            store.Add(target, new(start.AddSeconds(3), ResultKind.LocalError, null, ""));
+            store.Add(target, new(start.AddMinutes(30), ResultKind.Success, 5, ""));
+            store.Add(new Target("192.0.2.1"), new(start, ResultKind.Success, 99, ""));
+            var buckets = store.Load(target, start, start.AddHours(1), 2);
+            Assert.Equal(2, buckets.Count);
+            Assert.Equal(4, buckets[0].Sent); Assert.Equal(2, buckets[0].Received); Assert.Equal(1, buckets[0].Errors);
+            Assert.Equal(20, buckets[0].Average); Assert.Equal(30, buckets[0].Maximum); Assert.Equal(100d / 3, buckets[0].LossPercent, 3);
+            Assert.Equal(5, buckets[1].Average);
+            store.Cleanup(7, start.AddDays(10));
+            Assert.Empty(store.Load(target, start, start.AddHours(1), 2));
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+    [Fact]
+    public void IcmpChecksumMatchesReference()
+    {
+        // Echo request id 0x1234 seq 1 without payload: checksum computed by hand.
+        byte[] packet = [8, 0, 0, 0, 0x12, 0x34, 0x00, 0x01];
+        Assert.Equal(0xE5CA, RawIcmpTracer.Checksum(packet));
+    }
+    [Fact]
+    public async Task RawTracerReachesLoopbackWhenAvailable()
+    {
+        using var raw = RawIcmpTracer.TryCreate(AddressFamily.InterNetwork);
+        if (raw is null) return; // Needs root or CAP_NET_RAW on Linux.
+        var hops = await raw.ProbeAsync(IPAddress.Loopback, 3, 1000, default);
+        Assert.Equal(IPStatus.Success, hops[0].Status); Assert.Equal(IPAddress.Loopback, hops[0].Address);
+    }
     [AvaloniaFact]
     public void WindowRendersAndNavigatesWithoutStartingProbes()
     {
@@ -206,6 +271,15 @@ public sealed class CoreTests
         window.FindControl<TextBox>("HostInput")!.RaiseEvent(new Avalonia.Input.KeyEventArgs { RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent, Key = Avalonia.Input.Key.Enter });
         Assert.Equal("OLT Centro", window.Cards.Single(x => x.Target.Host == "127.0.0.2").Title);
         Assert.Equal("127.0.0.3", window.Cards.Single(x => x.Target.Host == "127.0.0.3").Title);
+        window.FindControl<TextBox>("HostInput")!.Text = "127.0.0.4 Borda";
+        window.FindControl<AutoCompleteBox>("GroupInput")!.Text = "POP Centro";
+        window.FindControl<TextBox>("HostInput")!.RaiseEvent(new Avalonia.Input.KeyEventArgs { RoutedEvent = Avalonia.Input.InputElement.KeyDownEvent, Key = Avalonia.Input.Key.Enter });
+        Assert.Equal("POP Centro", window.Cards.Single(x => x.Target.Host == "127.0.0.4").Group);
+        Assert.Contains(window.Groups, x => x.Name == "POP Centro" && x.Cards.Count == 1);
+        window.FindControl<TextBox>("SearchInput")!.Text = "Borda"; Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(1, window.Groups.Sum(x => x.Cards.Count));
+        window.FindControl<TextBox>("SearchInput")!.Text = ""; Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(window.Cards.Count, window.Groups.Sum(x => x.Cards.Count));
         window.Close();
         if (Directory.Exists(Path.GetDirectoryName(path))) Directory.Delete(Path.GetDirectoryName(path)!, true);
     }

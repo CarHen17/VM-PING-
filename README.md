@@ -20,17 +20,32 @@ Outras opções em **[Releases](https://github.com/CarHen17/VM-PING-/releases/la
 
 O executável ainda não tem assinatura digital: o Windows SmartScreen pode avisar na primeira execução (**Mais informações → Executar assim mesmo**). Confira o hash em `SHA256SUMS.txt`.
 
+### Assinatura de código (mantenedor)
+
+O workflow assina os `.exe` automaticamente quando estes secrets existem no repositório (*Settings → Secrets and variables → Actions*):
+
+- `WINDOWS_CERT_PFX_BASE64` — certificado de assinatura de código `.pfx` em base64 (`base64 -w0 cert.pfx`)
+- `WINDOWS_CERT_PASSWORD` — senha do `.pfx`
+
+Sem os secrets, a release sai sem assinatura, como hoje.
+
 ## Recursos
 
 - Monitoramento ICMP e TCP (`host:porta`) simultâneo, IPv4/IPv6 e nomes DNS
 - Latência com precisão abaixo de 1 ms, perda, mín/média/máx e **jitter** por host, gráfico das últimas 60 sondagens
 - **Histerese**: host só fica offline após N falhas seguidas (configurável) — sem alerta falso por perda isolada
 - **Alertas no Telegram** quando um host cai ou volta, agrupados quando vários caem juntos (ex.: POP inteiro)
-- **Traceroute e MTR contínuo** com DNS reverso e detecção de **ECMP** (vários roteadores por salto)
+- **Traceroute e MTR contínuo** com saltos em paralelo, DNS reverso e detecção de **ECMP** (vários roteadores por salto)
+- **Grupos** (POP, OLT, borda…) com resumo, recolher e iniciar/parar por grupo
+- **Modo lista** para dezenas de hosts na tela, **busca**, **filtros** e **ordenação** (problemas primeiro, maior latência…)
+- **Degradação**: alerta quando a latência média ou a perda passam do limite, antes de cair
+- **Histórico de latência** por host (1 h a 7 dias) com média, mín–máx, perda e disponibilidade
 - Inclusão em lote com nome: `10.0.0.1 OLT-Centro, 10.0.0.2 OLT-Norte`
 - Favoritos (conjuntos de hosts), histórico salvo em disco, exportação CSV
 - Temas claro e escuro; importa favoritos e aliases do `vmPing.xml` original
 
+![Modo lista com grupos](modern/previews/lista.png)
+![Histórico de latência](modern/previews/historico.png)
 ![Configurações](modern/previews/configuracoes.png)
 ![MTR](modern/previews/mtr-ipv6.png)
 

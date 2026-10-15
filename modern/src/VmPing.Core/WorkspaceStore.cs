@@ -18,6 +18,11 @@ public static class WorkspaceStore
         result.FailuresToDown = Math.Clamp(result.FailuresToDown, 1, 100);
         result.SuccessesToUp = Math.Clamp(result.SuccessesToUp, 1, 100);
         result.Alerts ??= new();
+        result.CollapsedGroups ??= [];
+        result.Targets = result.Targets.Select(x => x.Group is null ? x with { Group = "" } : x).ToList();
+        result.DegradedLatencyMs = Math.Clamp(result.DegradedLatencyMs, 0, 60000);
+        result.DegradedLossPercent = Math.Clamp(result.DegradedLossPercent, 0, 100);
+        result.SampleRetentionDays = Math.Clamp(result.SampleRetentionDays, 1, 90);
         return result;
     }
     public static void Save(string path, Workspace workspace)

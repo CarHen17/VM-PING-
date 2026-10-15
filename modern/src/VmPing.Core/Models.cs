@@ -3,7 +3,7 @@ namespace VmPing.Core;
 
 public enum ProbeKind { Icmp, Tcp }
 public enum ResultKind { Success, Timeout, Unreachable, LocalError }
-public record Target(string Host, int? Port = null, string Alias = "")
+public record Target(string Host, int? Port = null, string Alias = "", string Group = "")
 {
     public ProbeKind Kind => Port.HasValue ? ProbeKind.Tcp : ProbeKind.Icmp;
     public string Address => Port is null ? Host : $"{(Host.Contains(':') ? $"[{Host}]" : Host)}:{Port}";
@@ -68,7 +68,46 @@ public sealed class Statistics
         previous = time;
     }
 }
-public enum HostStatus { Stopped, Online, Down, LocalError }
+// Degraded is not produced by StatusTracker; it is layered on top of Online by DegradationMonitor.
+public enum HostStatus { Stopped, Online, Down, LocalError, Degraded }
+// Flags a host that answers but is too slow or loses too many packets over a sliding window.
+public sealed class DegradationMonitor
+{
+    public double LatencyMs { get; set; }
+    public double LossPercent { get; set; }
+    public int Window { get; set; } = 20;
+    public int MinimumSamples { get; set; } = 5;
+    private readonly Queue<double?> samples = new();
+    public bool IsDegraded { get; private set; }
+    public string Reason { get; private set; } = "";
+    public double RecentAverage { get; private set; }
+    public double RecentLoss { get; private set; }
+    // Local errors say nothing about the remote link and are ignored.
+    public bool Add(ResultKind kind, double? milliseconds)
+    {
+        if (kind == ResultKind.LocalError) return Evaluate();
+        samples.Enqueue(kind == ResultKind.Success ? milliseconds ?? 0 : null);
+        while (samples.Count > Math.Max(1, Window)) samples.Dequeue();
+        return Evaluate();
+    }
+    public bool Evaluate()
+    {
+        var replies = samples.Where(x => x is not null).Select(x => x!.Value).ToList();
+        RecentLoss = samples.Count == 0 ? 0 : 100d * (samples.Count - replies.Count) / samples.Count;
+        RecentAverage = replies.Count == 0 ? 0 : replies.Average();
+        var reasons = new List<string>();
+        if (samples.Count >= MinimumSamples)
+        {
+            if (LatencyMs > 0 && replies.Count > 0 && RecentAverage > LatencyMs) reasons.Add($"latência média {RecentAverage:F0} ms > {LatencyMs:F0} ms");
+            if (LossPercent > 0 && RecentLoss > LossPercent) reasons.Add($"perda {RecentLoss:F0}% > {LossPercent:F0}%");
+        }
+        var previous = IsDegraded;
+        IsDegraded = reasons.Count > 0;
+        Reason = string.Join(" · ", reasons);
+        return IsDegraded != previous;
+    }
+    public void Reset() { samples.Clear(); IsDegraded = false; Reason = ""; RecentAverage = RecentLoss = 0; }
+}
 // Debounces status changes so a single lost packet does not flap the host state.
 public sealed class StatusTracker(int failuresToDown = 3, int successesToUp = 1)
 {
@@ -107,6 +146,12 @@ public sealed class Workspace
     public bool DarkTheme { get; set; } = true;
     public int FailuresToDown { get; set; } = 3;
     public int SuccessesToUp { get; set; } = 1;
+    public double DegradedLatencyMs { get; set; }
+    public double DegradedLossPercent { get; set; }
+    public int SampleRetentionDays { get; set; } = 7;
+    public bool ListView { get; set; }
+    public int SortMode { get; set; }
+    public List<string> CollapsedGroups { get; set; } = [];
     public AlertSettings Alerts { get; set; } = new();
 }
 public sealed class AlertSettings
